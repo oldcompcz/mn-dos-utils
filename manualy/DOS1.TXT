@@ -1,0 +1,3062 @@
+ 
++-------------------------------------------------------------------------+
+|                                                                         |
+|                                                                         |
+|                                D   O   S                                |
+|                                                                         |
+|                                                                         |
++-------------------------------------------------------------------------+
+                            (c) Miroslav Nìmeèek
+
+    DOS  (Disk  Operating  System)  je hardwarovì nezávislá èást operaèního
+systému,  která  se  instaluje pøi startu operaèního systému z diskety nebo
+pevného  disku.  Zavádìní operaèního systému se provádí naètením zavádìcího
+sektoru  z  disku,  kterı  zabezpeèí  správné  naètení  jednotlivıch  èástí
+operaèního systému z disku do pamìti (viz sluby BIOS - pøerušení INT 19H -
+zavedení  operaèního systému). Pro MS DOS (MicroSoft Disk Operating System)
+se  operaèní systém skládá z èástí IO.SYS (doplòky vstupnì/vıstupní operací
+k BIOS) a MSDOS.SYS (sluby DOS).
+
+    DOS  umoòuje  pouívat  dva typy systémovıch slueb: pøerušení (pomocí
+instrukce  procesoru  INT  xx)  a volání funkcí (sluby pøerušení INT 21H).
+Pouívání  systémovıch  slueb operaèního systému umoòuje uivateli snadno
+psát  programy  bez  znalosti hardware poèítaèe a pøenositelné mezi rùznımi
+typy poèítaèù.
+
+    Systémové  sluby je moné vyvolat z Makroassembleru jednoduše uloením
+poadovanıch  dat  do  registrù  a vyvoláním pøerušení. Nìkteré sluby ruší
+obsahy registrù a proto je nutno pøed pouitím tìchto funkcí uchovat obsahy
+pøíslušnıch registrù (instrukcemi PUSH a POP).
+
+    Pøi  volání  systémovıch  slueb  z  vyššího  jazyka lze pouít rùznıch
+zpùsobù.  Napø.  pøi  volání  z  Basicu lze pouít pøíkazy CALL nebo funkce
+USER.  U  kompilátoru  je  moné  pøekládanı modul spojit s moduly v jazyku
+symbolickıch  adres.  Microsoft  Pascal  zahrnuje funkci DOSXQQ, kterou lze
+volat pøímo v programu v Pascalu k volání systémové funkce.
+
+   K návratu z programu do DOSu lze pouít nìkolik zpùsobù:
+
+         1.- Volání funkce 4CH:        MOV  AH,4CH
+                                       INT  21H
+             Tato metoda se pouívá nejèastìji.
+         2.- Volání pøerušení INT 20H (není vhodné - viz popis pøerušení)
+         3.- Skok na adresu 0 zaèátku prefixu programového segmentu;
+                                       JMP  0
+
+             Adresa  0  prefixu  programového  segmentu  obsahuje instrukci
+             INTú20H (viz bod 2.-) - pouze programy typu COM
+         4.- Volání funkce 00H:        MOV  AH,00H
+                                       INT  21H
+             Tato instrukce zpùsobí skok na adresu 0 (viz bod 3.-).
+         5.- Návrat do systému a ponechání programu rezidentním: INT 27H
+
+   Funkce operaèního systému lze rozdìlit zhruba do dvou základních skupin:
+
+         1.- znakové vstupy a vıstupy (po slubu 0CH=12)
+         2.- diskové operace a práce se soubory (od sluby 0DH=13)
+
+    Všechny  funkce  DOS  pracující  s  FCB  navrací  chybovı kód operace v
+registru  AL  -  pøi  bezchybné funkci navrátí kód 0, pøi chybì navrátí kód
+0FFH. Ostatní funkce hlásí chybu nastavením pøíznaku pøenosu CF a umístìním
+chybového  kódu  do registru AX. DOS 2.x navrací chybové kódy 0 - 12H (18).
+Pod  DOS  3.x je lepší volat funkci 59H, pomocí ní lze obdret podrobnìjší
+informace  o  chybách  -  viz  popis funkce 59H, kde je té uveden podrobnı
+seznam  chybovıch kódù DOS. Chybové kódy nejsou u nìkterıch funkcí z tohoto
+dùvodu ji uvádìny.
+
+
+
+                             V e r z e   D O S
+
+
+Verze DOS 1.0 vznikla z úspìšného operaèního systému CP/M.
+
+Verze DOS 1.1 vznikla  z  DOS 1.0 pouze opravením nìkterıch chyb. Pokud váš
+              program  musí  bıt  provozován  pod  DOS  verze  1.1, nesmíte
+              pouívat funkce DOS vyšší ne 2EH.
+
+Verze DOS 2.0 vznikla  zavedením  pevného  disku 20 MB (poèítaèe XT) firmou
+              IBM. Tato verze umoòovala:
+
+              - vícenásobné   adresáøe  (tj.  podadresáøe)  ke  snadnìjšímu
+                pøístupu na médium s vyšší kapacitou
+              - vstupnì/vıstupní   funkce   operací   se   soubory   pomocí
+                identifikátorù   souborù   (z   dùvodu  pracného  pouívání
+                øídících blokù souborù FCB)
+              - standardní  vstupy/vıstupy  - moné pøesmìøování podle typu
+                UNIX
+              - instalovatelné  drivery  zaøízení - zprostøedkování obsluhy
+                nestandardních zaøízení a RAM diskù, vèetnì driveru konzoly
+                ANSI.SYS
+
+Verze DOS 2.1 odstranila  nìkolik  chyb  verze  2.0 a pøipojila podporu pro
+              disketové drivery PCjr.
+
+Verze DOS 3.0 pøišla na svìt spolu s poèítaèi AT a obsahuje podporu pevného
+              disku  20  MB. Pøidala podporu pro 16-bitovou tabulku alokací
+              souboru FAT, èím minimalizovala nevyuité prostory na disku.
+              Pøidala  rozšíøená  chybová hlášení funkcí DOS (pomocí funkce
+              DOS 59H). Doplnìny nové povely DOS: ATTRIB, LABEL a VDISK.SYS
+              (RAM-disk).
+
+Verze DOS 3.1 obsahuje  nìkteré  sluby  pro práci v síti (sdílení souborù,
+              uzamykání  souborù,  pøesmìøování). Doplnìny nové povely DOS:
+              JOIN a SUBST.
+
+Verze DOS 3.2 pøichází spolu s IBM konvertabilním PC. Je rozšíøena o sluby
+              øízení driverù zaøízení IOCTL (funkce DOS 44H) a tím umonila
+              napø.  formátování  disku  pod øízením DOS atd. Doplnìny nové
+              povely DOS: REPLACE, XCOPY a DRIVER.SYS (logické disky).
+
+Kompatibilita: Všeobecnì  by  mìlo  platit,  e  vyšší  verze  by  mìla bıt
+               kopatibilní  se  starší  verzí. Mnoho programù je psáno tak,
+               aby  pracovalo  pod  DOS 2.x nebo je tato verze dosud stále
+               ještì rozšíøena.
+
+               Ovšem  vyšší  problémy s kompatibilitou nastávají vzhledem k
+               omezení  pamìti.  Vyšší verze DOS vyadují stále více a více
+               pamìti  a  ponechávají tak stále menší prostor pro aplikaèní
+               programy.
+               +-------+------------------+------------------+
+               | verze | prostor na disku | prostor v pamìti |
+               +-------+------------------+------------------+
+               |  1.0  |     11 551       |      12 144      |
+               |  1.1  |     13 279       |      12 400      |
+               |  2.0  |     39 424       |      24 800      |
+               |  2.1  |     39 551       |      24 800      |
+               |  3.0  |     58 926       |      37 024      |
+               |  3.1  |     60 534       |      37 040      |
+               |  3.2  |     68 637       |      44 704      |
+               +-------+------------------+------------------+
+
+               Problémy  vznikají  u  instalovatelnıch driverù zaøízení pro
+               disky  fomrátu  NON-IBM.  Nìkteré pracují pdo DOS 2.x, avšak
+               nepracují ji pod DOS 3.x.
+
+
+    Vìtšina  verzí  DOS  má  vysokou  kompatibilitu, avšak existuje nìkolik
+míst, kde mohou nastat problémy:
+
+    - Funkce  DOS  1BH  (poskytnutí  informací  FAT)  ve  verzi  DOS 2.0 se
+      ukonèuje  navrácením  ukazatele  na  aktuální  FAT  a  pouze  navrací
+      ukazatel na popisovaè média. FAT nemusí bıt v pamìti.
+
+    - Funkce  DOS 4FH (nalezení dalšího souboru) má malé zmìny mezi verzemi
+      DOS  2.x  a 3.x. Je po vás vyadováno ponechat DS:DX, aby ukazoval na
+      informace  z  volání  funkce  4EH (nalezení prvního souboru). DOS 2.x
+      pouze pøedpokládá, e to bylo na adrese DTA.
+
+    - Funkce  30H  (poskytnutí  èísla  verze  DOS)  v  DOS › 3.0 modifikuje
+      registry BX a CX.
+
+    - Funkce  DOS  38H  (národnostní informace) navrací nekompatibilní blok
+      národnostních informací.
+
+    - Tøi slova na konci tabulky BPB (viz drivery zaøízení) se pøepínají ve
+      verzi  DOS  3.0  z "volitelného" do "naøízeného". Take dbejte na to,
+      aby  nìkteré  drivery  NON-IBM  neukládaly  BPB do zavádìcího sektoru
+      pevného   disku   (to  se  aplikuje  pouze  u  pevnıch  diskù,  které
+      nepouívají tabulku oddílù disku).
+
+
+
+
+
+       I n i c i a l i z a c e   o p e r a è n í h o   s y s t é m u
+
+
+    Inicializace  operaèního systému se skládá z nìkolika krokù. Po zapnutí
+poèítaèe  se  pøedá  øízení  na  adresu FFFF:0000H (standardní funkce reset
+procesoru) - na této adrese je inicializaèní program uloenı v pevné pamìti
+ROM.  Po  vnitøních  inicializaèních  testech poèítaèe se provede pøerušení
+INTú19H  (viz  popis tohoto pøerušení v popisu BIOS), které zpùsobí naètení
+zavádìcího  sektoru  z  disku.  Tento  zavádìcí sektor pokraèuje v zavádìní
+operaèního  systému tím zpùsobem, e naète do pamìti z disku nejdøíve modul
+operaèního  systému IO.SYS (rozšiøující modul BIOS) a potom modul MSDOS.SYS
+(vlastní  èást  operaèního systému MS-DOS). Nakonec se naète z disku soubor
+COMMAND.COM,   kterı  slouí  jako  povelovı  interpreter,  kterı  umoòuje
+uivateli ovládání poèítaèe a provádìní pøíkazù operaèního systému.
+
+    Povelovı   interpreter   COMMAND.COM   (èasto  nazıvanı  té  pøíkazovı
+procesor) se skládá ze tøí èástí:
+
+    1.- Hned  za  modulem  MSDOS.SYS  a  jeho  datovou  oblastí  je uloena
+        rezidentní  èást  povelového  interpreteru  COMMAND.COM.  Tato èást
+        obsahuje  programy  pro  obsluhu  pøerušení INT 23H (adresa obsluhy
+        Ctrl-Break)  a  INT  24H  (adresa  obsluhy  kritickıch chyb) a také
+        program,  kterı znovu zavede doèasnou èást povelového interpreteru,
+        vdy  kdy  je  to  tøeba.  V  tomto  modulu COMMAND.COM se provádí
+        veškeré standardní zpracování chyb. To zahrnuje zobrazení chybovıch
+        zpráv a zpracování zpráv typu "Abort, Retry, Ignore, Fail ?".
+
+    2.- Za  rezidentní  èástí  COMMAND.COM  následuje  inicializaèní modul.
+        Tomuto  modulu  je  pøedáno øízení pøi spuštìní programu a obsahuje
+        rutinu,  která  zabezpeèí  vykonání  pøíkazù  uloenıch  v  souboru
+        AUTOEXEC.BAT. Inicializaèní modul urèuje adresu segmentu, na kterou
+        se  budou  zavádìt  programy.  Prvním  programem, kterı COMMAND.COM
+        zavede  do  pamìti,  je  tento  modul pøepsán, protoe u více není
+        potøeba.
+
+    3.- Doèasnı modul se zavádí do horní èásti pamìti. Tento modul obsahuje
+        vıkonné  èásti  všech  vnitøních  pøíkazù  a program pro zpracování
+        povelovıch   souborù   (tzv.   dávkovı   procesor).  Doèasnı  modul
+        povelového  interpreteru  vyvolá  nápovìdu systému, pøeète pøíkaz z
+        klávesnice  (nebo  pøíkaz  povelového souboru) a zabezpeèí vykonání
+        tohoto  pøíkazu.  Pøíkaz  mùe bıt buï vnitøní (obslunı program je
+        umístìn  v  pamìti) nebo vnìjší (do pamìti se zavede jako program a
+        spustí  se). Pro vnìjší pøíkazy tento modul vytvoøí pøíkazovı øádek
+        a volá funkci EXEC (funkce 4BH), která provede zavedení programu do
+        pamìti a jeho spuštìní.
+
+
+
+
+         S t a r t   p r o g r a m u   a   j e h o   u k o n è e n í
+
+
+    DOS  umí  naèíst  z disku a spustit dva typy souborù (programù) - COM a
+EXE  (tyto  soubory  jsou  na  disku  oznaèeny  jménem  programu, za kterım
+následuje pøípona COM nebo EXE).
+
+    Z dùvodu segmentovanıch adresovıch prostorù procesoru 8088/86/286/386 a
+také  díky  skuteènosti,  e  instrukce  JMP a CALL jsou relativní k jejich
+adrese,  je  moné naèíst do pamìti a spustit oba typy jmenovanıch programù
+na  libovolnou  adresu  odstavce  do pamìti (tj. libovolnı násobek 16 - viz
+popis  zpùsobu  adresování  mikroprocesoru  8088/86/286/386). Take nìkteré
+programy  mohou  bıt  uloeny  do  pamìti  jako  rezidentní (tj. jsou do ní
+umístìny  trvale  a  do  vypnutí nebo resetování poèítaèe) do "nízké" èáti
+pamìti  a  jiné  programy  mohou  bıt  naèteny  do pamìti nad úroveò tìchto
+programù  a  tam  mohou  bıt  odstartovány.  Programy  nejsou NIKDY psány s
+pøedpokladem,  e  by  mohly  bıt  naèteny  vdy  na  urèitou adresu (kromì
+nìkterıch samo-zavádìcích programù a her chránìnıch proti kopírování).
+
+    - Soubor  (program)  ve  formátu COM je binární soubor obsahující èásti
+      kódu  programu a data programu. Soubor musí bıt menší ne 64K (zavádí
+      se  pouze  do  rozsahu  jednoho  segmentu)  a  nesmí  obsahovat ádné
+      relokaèní  segmentové  poloky  (tj.  adresy  závislé na segmentu, ve
+      kterém je program umístìn).
+
+    - Soubor  ve  formátu  EXE obsahuje na zaèátku speciální záhlaví, které
+      urèuje zpùsob zavedení programu do pamìti a informace o referencích k
+      segmentové adrese.
+
+    Pøed  zavedením jakéhokoliv programu do pamìti (COM nebo EXE) zvolí DOS
+nejdøíve  segmentovou adresu, nazıvanou PSP (prefix programového segmentu),
+jako  bázovou  adresu  pro  zavedení  programu.  DOS vybere nejniší volnou
+adresu  v  pamìti,  avšak  øídící  program (jako je Microsoft Windows) mùe
+zvolit libovolnou èást pamìti. Potom DOS provede následující kroky:
+
+    - Provede zduplikování souèasného prostøedí DOS pro program. Funkce DOS
+      4BH (zavedení programu z disku) dává otcovskému (nadøazenému) procesu
+      monost  definovat  vlastní odlišné prostøedí. Napø. - program, kterı
+      chce vyvolat COMMAND.COM, nastaví prompt DOSu tak, aby obsahoval text
+      "Pouijte EXIT k návratu do GENS80").
+
+    - Verze DOS › 3.0 umístí za konec prostøedí zavádìcí cestu k programu.
+
+    - Vyplní  poloky v prefixu progamového segmentu informacemi uiteènımi
+      pro program (viz Prefix programového segmentu):
+         - celková volná pamì pro program
+         - segmentová adresa prostøedí DOS
+         - 0-2  neotevøené  øídící bloky souborù FCB jako rozbor povelového
+           øádku  (parametry  zadané  za jménem volaného programu) - pozn.:
+           pøi   otevøení   prvního   FCB   se  pøepíše  èást  druhého  FCB
+           následujícího za prvním.
+         - parametry povelu, vzniklé rozborem povelového øádku - doplòující
+           znaky zadané v povelovém øádku za jménem programu
+         - souèasné nastavení vektorù INT 22H, INT 23H a INT 24H
+
+    - Nastaví souèasnou adresu pro diskové pøenosy DTA na adresu PSP:0080H.
+
+    - Nastaví  registr  AX  tak,  aby indikoval platnost identifikace diskù
+      (pokud  jsou nìjaké zadány) parametrù zadanıch v povelovém øádku jako
+      specifikace souboru. Pokud je AL=0FFH, potom první identifikace disku
+      byla  neplatná. Pokud je AH=0FFH, potom byla druhá identifikace disku
+      neplatná.
+
+    Programy  ve  formátu  EXE  definují  vícenásobné  programové segmenty,
+vèetnì  kódu  programu,  dat  a segmentu zásobníku. Soubor EXE se zavádí od
+adresy  PSP:0100H.  Pøi jeho zavádìní ète DOS ze záhlaví programu relokaèní
+informace  a  provádí  relokace  segmentovıch  adres. To znamená, e takové
+reference, jako
+
+         mov       ax,data_seg         ; adresa datového segmentu
+         mov       ds,ax
+nebo
+         call      far_proc            ; volání vzdálené procedury
+
+    musí  bıt  upraveny  tak, aby bylo moné zavedení programu do libovolnì
+zvoleného segmentu pamìti. Více informací viz Formát souboru EXE.
+
+    Po relokaci se pøedá øízení do zavedeného modulu pomocí instrukce skoku
+typu FAR na adresu CS:IP, která je zjištìna ze záhlaví souboru EXE.
+
+    Pokud program ve formátu EXE pøevezme øízení, potom:
+
+    - registry DS a ES jsou nastaveny na PSP (prefix programového segmentu)
+    - CS, IP, SS a SP se nastaví na hodnoty zjištìné ze záhlaví souboru EXE
+    - pole  PSP  "horní  hranice  pamìti"  se  nastaví  na hodnotu udanou v
+      záhlaví souboru EXE. Normálnì se pøidìlí programu celá volná pamì.
+
+    Programy  ve  formátu  COM  se definují v jednom segmentu (nebo alespoò
+neprovádìjí  explicitnì  ádné reference do jiného segmentu). Bajty souboru
+typu  COM  se  jednoduše naèítají z disku a ukládají se do pamìti od adresy
+PSP:0100H (tj. stejnì jako program typu EXE). Poznamenejme, e program typu
+COM mùe sice pouívat vícenásobné segmenty, avšak musí si sám pøepoèítávat
+nebo  øídit  segmentové  adresy  za pouití programového segmentu (CS) jako
+báze.
+
+    Programùm ve formátu COM se dává pøednost oproti programùm typu EXE pro
+krátké  programy  psané  ve  strojovém  kódu.  Zavádìjí  se rychleji, nebo
+nevyadují  ádné  relokace  segmentù,  a  zabírají  ménì prostoru na disku
+(nebo v zavádìném modulu nemusí bıt záhlaví EXE ani segment zásobníku).
+
+    Po zavedení programového souboru typu COM do pamìti:
+
+    - CS, DS, ES a SS se nastaví na stejnı segment jako PSP
+    - SP  se  nastaví  na  konec segmentu PSP (obvykle hodnota FFFEH, avšak
+      pokud  není  zaplnìn  celı segment 64 KB, mùe bıt i niší). Slovo na
+      offsetu  06H  prefixu programového segmentu PSP se nastaví na hodnotu
+      indikující, kolik je v programovém segmentu volného místa.
+    - Veškerá   systémová   pamì  nad  programovım  segmentem  se  pøidìlí
+      programu.
+    - Do zásobníku se uloí slovo 0000H (take lze pro návrat pouít RET).
+    - Ukazatel  IP  se  pomocí  skoku  JMP  na  adresu PSP:0100H nastaví na
+      hodnotu 100H (první bajt zavedeného modulu).
+
+    Ukonèení programu EXE nebo COM je moné nìkterou z tìchto moností:
+
+    - pouití funkce DOS 4CH (tato funkce je nejpouívanìjší)
+    - pouití funkce DOS 00H nebo vyvolání INT 20H; CS musí bıt nastaven na
+      hodnotu PSP - to zajistíte napø. tím, e do zásobníku uloíte hodnotu
+      segmentu  PSP (napø. pøi startu programu instrukcí PUSH DS) a slovo o
+      hodnotì  0000H  (instrukcí  PUSH  0).  Pøi  ukonèení  programu  pouze
+      provedete  instrukci FAR RET (operaèní kód 0CBH), èím pøedáte øízení
+      na INT 20H v PSP tak, jak to vyaduje DOS.
+
+    Funkce  4CH  odstraòuje  tyto  komplikace  a  umoòuje  navíc  navracet
+otcovskému  (nadøazenému) procesu (obvykle COMMAND.COM) vıstupní kód, kterı
+mùe  bıt  testován  (v  COMMAND.COM  je to povel "IF ERRORLEVEL", otcovskı
+proces mùe pouít funkci DOS 4DH).
+
+    Program  je  moné  té ukonèit s tím, e zùstane trvale v pamìti (tzv.
+rezidentní  program TSR) a do doby nového startu poèítaèe. K tomu je moné
+pouít  pøerušení INT 27H (starší verze DOS) nebo funkci DOS 31H. Pøerušení
+INT 27H umoòuje ponechat v pamìti rezidentní program o maximální velikosti
+64  KB.  Funkce DOS 31H umoòuje ponechat v pamìti i vìtší èást ne 64 KB a
+umoòuje navracet do otcovského procesu vıstupní kód.
+
+
+
+             S t a n d a r d n í   v s t u p y / v ı s t u p y
+
+
+    Verze  DOS  ›  2.0  podporují  pøesmìøování  standardních  vstupních  a
+standardních  vıstupních  zaøízení.  To je základ techniky, kdy vstupy nebo
+vıstupy programu probíhají do jiného programu.
+
+    Dokud   není   provedeno   pøesmìøování,  probíhá  standardní  vstup  z
+klávesnice  poèítaèe  a  standardní  vıstup  na  obrazovku  (tj. zaøízení s
+oznaèením  CON).  Otcovskı  proces  (jako  COMMAND.COM)  mùe pøed pøedáním
+øízení  synovskému procesu pøesmìøovat buï standardní vstup nebo standardní
+vıstup  nebo  oba.  To  mùe  bıt  velmi  vıkonnı  zpùsob,  jak si pøedávat
+informace z procesu do procesu s minimem programového øízení.
+
+    Viz té Standardní identifikátory souborù.
+
+    Ke  ètení  nebo zápisu na standardní vstupnì/vıstupní zaøízení pouijte
+znakové  funkce DOS 3FH (ètení) a 40H (zápis). Pokud si chcete bıt jist, e
+se  zobrazí  hlášení  na  obrazovce,  pouijte  identifikátor  souboru  02H
+(standardní chybové zaøízení) s funkcí 40H (zápis).
+
+    - Pouijte funkci DOS 46H k pøesmìøování standardních vstupù/vıstupù.
+    - Pouijte funkci DOS 4BH k vyvolání synovského procesu.
+    - Pouijte  funkci  DOS  44H  (IOCTL)  k  urèení,  zda  bylo standardní
+      vstupnì/vıstupní zaøízení pøesmìøováno.
+    - Atribut  zaøízení  (viz Instalovatelnı driver zaøízení) indikuje, zda
+      je   zaøízení  pouito  jako  standardní  vstupní  a/nebo  standardní
+      vıstupní zaøízení.
+
+    Povelovı   interpreter   DOS  (tj.  COMMAND.COM)  provádí  pøesmìøování
+vstupù/vıstupù  podle  povelového  øádku  ještì  pøed  provedením vnitøního
+povelu nebo pøed vyvoláním programu:
+
+    proces < specifikace_souboru       - klávesnicovı   vstup  probìhne  ze
+                                         souboru
+    proces > specifikace_souboru       - vıstup   na  displej  probìhne  do
+                                         souboru  (soubor  se  pøi vyvolání
+                                         nejdøíve zkrátí na nulovou délku)
+    proces >> specifikace_souboru      - vıstup na displej bude pøipojen do
+                                         souboru  (na  jeho  konec,  soubor
+                                         nebude zkracován)
+    proces1 | proces2                  - 1.- vyvolá  proces  1,  vıstup  na
+                                             obrazovku   jde  do  doèasného
+                                             souboru
+                                         2.- vyvolá   proces   2,  vstup  z
+                                             klávesnice   jde  z  doèasného
+                                             souboru
+                                         3.- zruší doèasnı soubor
+
+    Pozn.: Symbol "|" lze pouít vícenásobnì:
+           DIR | SORT | FIND /v "i" > soubor.txt
+
+           Doèasnı  soubor  bude mít jedineèné jméno sestavené z HEX èíslic
+           souèasného  data  a  èasu.  Vytváøí se vdy v aktuálním adresáøi
+           aktuálního disku.
+
+    Pøíklad - pouití pøesmìøování v povelu ECHO:
+
+         ECHO ^L > PRN       (provede odstránkování tiskárny)
+         ECHO y|DEL *.*      (odpoví "yes" na otázku "Are you sure?)
+         ECHO ATDT 1(213)555-1234 >AUX (vyvolá telefonní èíslo)
+
+    Pøesmìøování   vıstupu  na  zaøízení  NUL  odstraní  nìkterá  systémová
+hlášení: COPY *.COM D: >NUL (odstraní hlášení "1 File(s) copied").
+
+    COMMAND.COM  bude  ignorovat  symbol  pøesmìøování, pokud je uzavøen do
+závorek:
+         REM Pouívám znak ">" na tomto øádku.
+
+
+
+
+
+
+                   R o z d ì l e n í   d i s k u   D O S
+
+
+    Rozdìlení  disku  DOS se vztahuje k blokovému zaøízení, na které se DOS
+odkazuje  pomocí  absolutních  sektorù  (tj.  sektory  s  èíslem od 0 a do
+maximální  kapacity  disku,  obvyklá délka sektoru je 512 bajtù). Absolutní
+sektory  však  nemusí vdy odpovídat fyzickım sektorùm na disku. Pevnı disk
+mùe bıt rozdìlen na tzv. oddíly (partition) a kadı z oddílù se chová jako
+samostatnı disk. Podrobnìji viz kapitolu "Tabulka oddílù disku".
+
+    V  prvním  sektoru disku jsou umístìny informace o disku pro modul BIOS
+(fyzickı  formát  disku  - poèet sektorù na stopu, délka sektoru, poèáteèní
+sektor  datové  oblasti)  a pro DOS (poèet sektorù celkem, poèet sektorù na
+alokaèní  blok,  poèet  poloek  adresáøe,  poèáteèní sektor datové oblasti
+atd.).
+
+    Další prostor disku je rozdìlen podle následující tabulky:
+
+    - rezervovaná oblast (zavádìcí sektor)
+    - první kopie tabulky pøidìlení blokù souborùm (FAT)
+    - druhá kopie tabulky pøidìlení blokù souborùm (FAT)
+    - pøídavné kopie tabulky pøidìlení blokù souborùm (FAT) (nepovinné)
+    - základní (koøennı) adresáø disku
+    - datová oblast souborù (sestává z jednotlivıch alokaèních blokù)
+
+    Prostor pro soubor v datové oblasti není pøidìlen spojitì. Pøidìluje se
+souborùm  pøi jejich ukládání prùbìnì po alokaèních blocích. Alokaèní blok
+je  èást  disku,  pøedstavuje  skupinu  urèitého  poètu sektorù jdoucích za
+sebou.  Tímto zpùsobem je logická posloupnost sektorù na disku rozdìlena na
+krátké  úseky,  které  mohou  bıt pøidìlovány souborùm. Takto vznikají sice
+nevyuitá  místa  vzniklá  pøi neúplném zaplnìní alokaèního bloku souborem,
+avšak umoòuje to rychlé operace se soubory.
+
+    V  adresáøi  disku  jsou adresáøové poloky jednotlivıch souborù. Kadá
+poloka obsahuje veškeré informace o pøíslušném souboru. Obsahuje té èíslo
+prvního  alokaèního  bloku,  kterı je souboru pøidìlen. Informace o dalších
+alokaèních  blocích  se  získají  z tabulky pøidìlení blokù souborùm (FAT -
+File  Allokation  Tabelle).  Tabulka  FAT  je rozdìlena do poloek, jejich
+poèet  odpovídá  poètu  alokaèních  blokù  na disku. Kadá poloka odpovídá
+jednomu  bloku  na  disku  a  obsahuje  informaci,  kterı blok následuje za
+blokem,  ke  kterému  poloka  náleí.  Tím se vytváøí zøetìzení alokaèních
+blokù pro pøíslušnı soubor. Pøi pøístupu k souboru se pøeète nejdøíve èíslo
+prvního alokaèního bloku (z adresáøové poloky). Pro tento alokaèní blok se
+nalezne  v  pøíslušné  poloce  tabulky  FAT èíslo následujícího alokaèního
+bloku a tak se postupuje tak dlouho, a se narazí na koncovou znaèku (èíslo
+alokaèního bloku vìtší ne (F)FF8H). Poloka tabulky FAT mùe bıt 12-bitová
+nebo  16-bitová.  Obvykle se na disku uchovávají záloní kopie FAT. Kdy se
+na  disku  objeví  špatnı  sektor uprostøed první FAT, mùe se pouít druhá
+kopie. Tím se vyhneme ztrát v dùsledku nepouitelného disku.
+
+
+
+
+                  T a b u l k a   o d d í l ù   d i s k u
+
+
+    U  pevného disku neodpovídá absolutní sektor, na kterı se odkazuje DOS,
+pøímo  poøadí fyzického sektoru na disku. Disk mùe bıt rozdìlen na nìkolik
+oddílù  (partition) a tím v podstatì na nìkolik diskù, na které se DOS mùe
+odkazovat.
+
+    Fyzicky první sektor na pevném disku obsahuje "Hlavní zavádìcí sektor",
+kterı  se pøi zavádìní operaèního systému zavede do pamìti a tam se spustí.
+Konec  tohoto  sektoru obsahuje tabulku oddílù disku (rozdìlení disku) - je
+to  tabulka  o 4 polokách, kadá poloka je 16 bajtù dlouhá a mùe urèovat
+jeden  logickı  disk. S touto tabulkou je moné manipulovat pomocí programu
+FDISK (standardní program operaèního systému DOS).
+
+    Pøi  zavádìní  operaèního  systému  zavede  ROM-BIOS  do  pamìti hlavní
+zavádìcí  sektor  pevného  disku  a  pøedá  na  jeho adresu øízení. Program
+zavádìcího  sektoru  nejdøíve  naète tabulku oddílù disku a pomocí ní urèí,
+kterı  oddíl  disku  je  oznaèen  jako aktivní. Z tohoto oddílu potom naète
+správnı zavádìcí sektor do pamìti a pøedá tomuto sektoru øízení.
+
+    Struktura hlavního zavádìcího sektoru:
++------------+------------+-----------------------------------------------+
+|   offset   |  velikost  |                     obsah                     |
++------------+------------+-----------------------------------------------+
+| 000H (  0) | 1BEH (446) | kód programu, kterı zavede a spustí zavádìcí  |
+|            |            | sektor z aktivního oddílu disku               |
+| 1BEH (446) |  10H ( 16) | poloka oddílu 1                              |
+| 1CEH (462) |  10H ( 16) | poloka oddílu 2                              |
+| 1DEH (478) |  10H ( 16) | poloka oddílu 3                              |
+| 1EEH (494) |  10H ( 16) | poloka oddílu 4                              |
+| 1FEH (510) |  02H (  2) | oznaèení tabulky oddílù disku (AA55H)         |
++------------+------------+-----------------------------------------------+
+
+    Struktura poloky jednoho oddílu:
++------------+------------+-----------------------------------------------+
+|   offset   |  velikost  |                     obsah                     |
++------------+------------+-----------------------------------------------+
+|  00H ( 0)  |     1      | zavádìcí pøíznak: 0=neaktivní, 80H=aktivní    |
+|  01H ( 1)  |     1      | zaèátek oddílu - èíslo hlavy                  |
+|  02H ( 2)  |     2      | zaèátek oddílu - sektor a válec zavád. sektoru|
+|  04H ( 4)  |     1      | kód systému: 0=neznámı, 1=FAT 12b, 4=FAT 16b  |
+|  05H ( 5)  |     1      | konec oddílu - èíslo hlavy                    |
+|  06H ( 6)  |     2      | konec oddílu - sektor a válec posledního sekt.|
+|  08H ( 8)  |     4      | èíslo poèáteèního relativního sektoru         |
+|  0CH (12)  |     4      | velikost (celkovı poèet sektorù)              |
++------------+------------+-----------------------------------------------+
+
+    Poloka  sektoru  a  válce  specifikuje  své hodnoty tak, e nejniších
+6úbitù  udává èíslo sektoru a vyšších 10 bitù udává èíslo válce. Tento údaj
+je  tedy  v  takovém  tvaru,  kterı  té odpovídá nastavení registru CX pøi
+volání obsluhy INTú13H (obsluha disku). Pokud chcete napø. èíst první oddíl
+z  disku,  musíte  nejdøíve  pøeèíst hlavní zavádìcí sektor (adresa sektoru
+CX=0)  do  bufferu 'buffer'. Potom instrukcí MOVúCX,buffer[01c0h] nastavíte
+hodnotu  registru  CX  pro  pøerušení  INT 13H, pomocí kterého mùete takto
+pøeèíst zavádìcí sektor disku #1.
+
+    Relativní   sektor  na  offsetu  08H  kadé  poloky  oddílu  disku  je
+ekvivalentní  hlavì,  sektoru  a  válci  poèáteèní adresy oddílu. Relativní
+sektor  0  je  ekvivalentní  sektoru  1 na válci 0 a povrchu válce èíslo 0.
+Èíslo  relativního  sektoru  se inkrementuje nejdøíve pøi kadém sektoru na
+stopì,  potom  pøi  kadé  hlavì  (resp. povrchu disku) a nakonec pøi kadé
+stopì  (nezapomeòte,  e  poèet  hlav  - povrchù - disku mùe bıt u rùznıch
+diskù velmi rozmanitı). K vıpoètu pouijte tento vztah:
+
+        ( èíslo_válce * poèet_sektorù_na_stopu * poèet_hlav )
+     +  ( èíslo_hlavy * poèet_sektorù_na_stopu )
+     +  ( èíslo_sektoru - 1 )
+     --------------------------------------------------------
+     =  èíslo_relativního_sektoru
+
+    Jednotlivé  oddíly  zaèínají  vdy  na  sudém èísle válce kromì prvního
+oddílu,  kterı  mùe  zaèínat  na  válci 0, hlavì 0, sektoru 2 (sektor 1 je
+obsazen hlavním zavádìcím sektorem).
+
+    Kdy  zavádìcí  sektor  oddílu  pøejímá  øízení, ukazuje registrovı pár
+DS:SI na poloku tohoto oddílu v tabulce oddílù disku.
+
+
+
+
+                 Z a v á d ì c í   s e k t o r   d i s k u
+
+    Zavádìcí  sektor  disku  je  vdy  prvním sektorem na disku a to jak na
+disku  DOS  (tj. napø. jednotlivé oddíly na pevném disku), tak i jako první
+fyzickı  sektor  na pevném disku (oznaèuje se jako hlavní zavádìcí sektor).
+Zavádìcí  sektor  disku  obsahuje  základní  informace  o  disku,  jako  je
+rozdìlení  disku,  velikosti  tabulek  FAT  a  základního  adresáøe, a také
+informaci o fyzickém formátu diskety (tj. kolik je sektorù na stopu) - tato
+informace  se  ovšem netıká stopy 0 na povrchu 0 disku, nebo tato stopa je
+naformátována vdy standardním formátem (liší se pouze podle typu pøipojené
+disketové mechaniky).
+
+    Struktura zavádìcího sektoru:
++----------+----------+---------------------------------------------------+
+|  offset  | velikost |                     obsah                         |
++----------+----------+---------------------------------------------------+
+| 00H ( 0) |    3     | instrukce skoku na zaèátek programu zavadìèe      |
+| 03H ( 3) |    8     | identifikaèní jméno a verze (napø. "IBM  3.2")    |
+| 0BH (11) |    2     | poèet bajtù na sektor                             |
+| 0DH (13) |    1     | poèet sektorù na alokaèní blok                    |
+| 0EH (14) |    2     | poèet rezervovanıch sektorù (sektory pøed FAT)    |
+| 10H (16) |    1     | poèet tabulek FAT                                 |
+| 11H (17) |    2     | poèet poloek základního (koøenného) adresáøe     |
+| 13H (19) |    2     | celkovı poèet sektorù na médiu (resp. oddílu DOS) |
+| 15H (21) |    1     | popisovaè média (stejná hodnota jako 1. bajt FAT) |
+| 16H (22) |    2     | poèet sektorù jedné tabulky FAT                   |
+| 18H (24) |    2     | poèet sektorù na stopu                            |
+| 1AH (26) |    2     | poèet ètecích/zápisovıch hlav (= povrchù disku)   |
+| 1CH (28) |    2     | poèet skrytıch sektorù                            |
++----------+----------+---------------------------------------------------+
+
+    Poloky  této  struktury  od  poloky  na  offsetu  0BH (poèet bajtù na
+sektor)  a  po  poloku  na  offsetu 16H (poèet sektorù jedné tabulky FAT)
+odpovídají  tabulce  blokù  parametrù  BIOS  (BPB),  kterou  vytváøí driver
+zaøízení  pøi  povelu  vystavìní  tabulky  BPB (viz kapitola Instalovatelné
+drivery zaøízení).
+
+    Na  offsetu  1EH  zaèíná  nestandardní èást, kterou pouívá program pro
+zavádìní  operaèního  systému.  Podrobnosti  o tomto programu viz pøerušení
+INTú19H (zavádìní operaèního systému).
+
+    Popisovaè  média  je  1-bajtovı  kód,  kterı  mùe bıt (nìkdy) pouit k
+identifikaci  typu  média,  které je pouito v diskovém zaøízení. Popisovaè
+média (èasto té nazıvanı FAT ID = identifikátor FAT) mùete také spatøit:
+
+         - jako hodnotu obdrenou funkcemi DOS 1CH a 32H
+         - jako první bajt tabulky FAT (obvykle sektor DOS s èíslem 1)
+         - jako offset 0AH v tabulce bloku parametrù BIOS BPB
+         - v datovém bloku pouitém funkcí DOS 44H/podsluba 0DH
+ 
++----------+--------------------------------------------------------------+
+|  hodnota |         typ média - definováno jako v DOS 3.2                |
++----------+--------------------------------------------------------------+
+|   F8H    |  pevnı disk                                                  |
+|   F9H    |  disketa 5 1/4" HD, 2 strany, 15 sektorù na stopu            |
+|   FCH    |  disketa 5 1/4" DD, 1 strana, 9 sektorù na stopu             |
+|   FDH    |  disketa 5 1/4" DD, 2 strany, 9 sektorù na stopu             |
+|          |  disketa 8" (formát IBM 3740) SD, 2 strany, 26 sekt./stopu   |
+|   FEH    |  disketa 5 1/4" DD, 1 strana, 8 sektorù na stopu             |
+|          |  disketa 8" (formát IBM 3740) SD, 1 strana, 26 sekt./stopu   |
+|          |  disketa 8" DD, 2 strany, 26 sekt./stopu                     |
+|   FFH    |  disketa 5 1/4" DD, 2 strany, 8 sektorù na stopu             |
++----------+--------------------------------------------------------------+
+
+        +-+-+-+-+-+-+-+-+
+        |7 6 5 4 3 2 1 0|
+        +++++++++++++++++ bit
+         | | | | | | | +-> 0: 1=2 strany; 0=nejsou 2 strany
+                   | +---> 1: 1=8 sektorù; 0=není 8 sektorù
+         1 1 1 1 1 +-----> 2: 1=vyjímatelnı; 0=není vyjímatelnı
+
+    Jak  vidíte,  popisovaè  média neposkytuje pøíliš spolehlivé informace,
+proto  je  lépe  jej  pøíliš  nepouívat.  Napø.  zavádìcí sektor RAM-disku
+(VDISK.SYS)  obsahuje  popisovaè  média indikující, e jde o disketu 360úKB
+(bez  ohledu na velikost RAM-disku). Take, popisovaè média 0f8H se pouívá
+pro všechny pevné disky, a to je asi tak jedinı bod, kterı lze pouít.
+
+
+
+
+
+
+          A l o k a è n í   t a b u l k a   s o u b o r ù   F A T
+
+    Alokaèní  tabulka  souborù  (FAT)  je  umístìna  na  zaèátku  disku  za
+zavádìcím  sektorem  a  pøed  základním  adresáøem  disku.  DOS pouívá FAT
+kúurèení  fyzické  polohy  dat  souboru  na  disku a k urèení volného místa
+kúuloení  novıch  souborù.  Kadému  alokaènímu  bloku na disku odpovídá v
+tabulce  FAT jedna poloka. Slovo s offsetem 1AH v kadé adresáøové poloce
+udává  èíslo prvního alokaèního bloku, kterı pøísluší danému souboru. Pokud
+se podíváte na poloku v tabulce FAT, která odpovídá tomuto bloku, zjistíte
+buï  èíslo  následujícího bloku nebo znaèku urèující konec souboru (tedy e
+tento  blok byl poslední). Délka jedné poloky v tabulce FAT má obvykle buï
+12  bitù  nebo  16  bitù  (tj.  jedno  slovo).  Znázornìme  si jako pøíklad
+pøidìlení blokù souboru s polokami FAT po 8 bitech:
+
+Poloka adresáøe:
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    0 1 2 3 4 5 6 7 8 9 A B C D E F 0 1 2 3 4 5 6 7 8 9 A B C D E F
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |S O U B O R    |T X T|a|                   |   |   |0 8|       |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | jméno souboru | typ | |    rezervováno    |èas|dat| | |velikost
+                       atribut                           |
+                                                         |poèáteèní
+                             +---------------------------+alokaèní blok
+                             |
+    00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16
+   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+   |ID|FF|FF|04>05>FF|00|00|09>0A>0B>12|0D>0E>0F>11|0C|FF|14|F7|15>FF|00|
+   +--+--+--+--+--+--+--+--+--+--+--+-|+--+--+--+--+--+--+-|+--+--+--+--+
+                                      +------------->-----++----+
+    Tento pøíklad znázoròuje následující informace:
+    - Soubor  SOUBOR.TXT  je dlouhı 7 alokaèních blokù. První alokaèní blok
+      má èíslo 08H, za ním následují alokaèní bloky 09H, 0AH, 0BH, 12H, 14H
+      a 15H, alokaèní blok 15H je oznaèen jako poslední.
+
+    - Alokaèní  blok  (cluster)  13H  je oznaèen jako vadnı a není souèástí
+      alokaèního prostoru.
+
+    - Bloky 06H, 07H a 16H jsou prázdné a jsou volné pro další pøidìlení.
+
+    - Jsou  zde  ještì  dva  soubory, první zaèíná na alokaèním bloku 02H a
+      obsahuje  dále  bloky  03H  a  05H. Druhı soubor zaèíná na alokaèním
+      bloku  10H  a  obsahuje  dále  bloky  0CH,  0DH,  0EH,  0FH a 11H. Ke
+      zjištìní,   kterım   souborùm  tyto  bloky  patøí,  je  nutné  nalézt
+      adresáøové poloky s èísly poèáteèních alokaèních blokù 03H a 10H.
+
+
+Umístìní FAT na disku:
+
+    FAT  normálnì zaèíná na logickém sektoru 1 v oddìlení DOS (partition na
+pevném disku), tj. mùete jej èíst pomocí pøerušení INT 25H s DX=1. Jedinou
+cestou,  jak  se  o  tom  pøesvìdèit,  je  pøeèíst zavádìcí sektor (DX=0) a
+zkontrolovat  slovo  na  offsetu  0EH.  Toto slovo øíká, kolik zavádìcích a
+rezervovanıch sektorù je pøed tabulkou FAT. Pouijte toto èíslo (obvykle=1)
+v registru DX ke ètení tabulky FAT pomocí INT 25H.
+
+    Na  disku mùe bıt i více ne jedna kopie tabulky FAT. Jsou obvyklé dvì
+kompletní kopie (dvì stejné tabulky FAT). Pokud jsou tabulky dvì nebo více,
+budou všechny sousedit (druhá tabulka FAT následuje ihned za první).
+
+    K získání informací o FAT mùete pouít následující sluby:
+
+         - Pouijte INT 25H k pøeètení zavádìcího sektoru.
+         - Pouijte  funkci  DOS  36H  nebo  1CH  k  urèení celkového poètu
+           sektorù nebo alokaèních blokù na disku.
+         - Pouijte   funkci  DOS  44H  (pokud  driver  zaøízení  podporuje
+           generování IOCTL) v DOS › 3.2
+         - Pouijte  funkci  DOS  32H  k získání všech monıch pouitelnıch
+           informací.
+
+    Pozn.: Zavádìcí  sektor  disku ne-zavádìcího disku (jako síová bloková
+           zaøízení a starší pevné disky) mùe obsahovat pouze nesmysly.
+
+
+Pouití 12-bitové/16-bitové tabulky FAT:
+
+    Tabulka  FAT  mùe bıt nadefinována pomocí 12-bitovıch nebo 16-bitovıch
+poloek. 12-bitové poloky jsou velmi efektivní pro média s kapacitou menší
+ne  384 KB - poloka FAT mùe urèovat jednoduchı 512-bajtovı sektor disku.
+Pro  delší  média  musí  kadá poloka FAT adresovat delší a delší alokaèní
+bloky  (nebo maximální poèet alokaèních blokù je omezen hodnotou 212=4096)
+a  k  bodu,  kdy  by  pevnı  disk  20M pøi pouití 12-bitovıch poloek FAT
+vyadoval  alokaèní bloky dlouhé 16 sektorù (jinımi slovy, 1-bajtovı soubor
+by zabral na disku prostor 8 KB).
+
+    16-bitové  poloky  FAT  byly  zavedeny  v  DOS  3.0 z dùvodu efektivní
+obsluhy pevného disku AT 20 MB. Avšak disketové jednotky a pevnı disk 10 MB
+i  nadále  pouívají  12-bitové poloky FAT. Zda se pouívá FAT s polokami
+12úbitù nebo 16úbitù mùete urèit tímto postupem:
+
+    DOS 3.0 øíká: Pokud  má  disk  více  ne 4086 (0ff6H) blokù, pouije se
+                  16-bitová  tabulka  FAT  (4096  je  maximální hodnota pro
+                  12-bitové èíslo, hodnoty nad 0ff6H jsou rezervovány).
+
+    DOS 3.2 øíká: Pokud  má disk více ne 20740 (5104H) sektorù, pouije se
+                  16-bitová  tabulka  FAT  (tedy jakıkoliv disk s kapacitou
+                  nad 10 MB pouívá 16-bitovou tabulku FAT).
+
+    Je  všeobecnì  mylnım  názorem, e 16-bitová tabulka FAT neumoòuje DOS
+pracovat  s  disky  vìtšími  ne 32 Megabajtù. Ve skuteènosti je omezujícím
+faktorem  kapacity  disku  to,  e  pøerušení  INT  25H/26H  (ètení a zápis
+absolutního sektoru na disk pro DOS) není schopné adresovat SEKTOR s vyšším
+èíslem  ne 65535, nebo adresa sektoru se pøedává v 16-bitovém registru DX
+(a  216=65536). A protoe sektory mají normálnì velikost 512 bajtù, vyplıvá
+z  toho  omezení  disku  na 32 MB. Nic však neøíká, e nemùete mít sektory
+delší  ne  512  bajtù,  take DOS by potom teoreticky mohl obsluhovat disk
+sújakoukoliv kapacitou.
+
+
+Ètení a zápis do tabulky FAT:
+
+    Ke  ètení  hodnoty  z  poloky  FAT (napø. pøi zmìnách ve FAT) nejdøíve
+pøeètìte  poadovanou  tabulku  FAT  do  pamìti a z adresáøe zjistìte èíslo
+poèáteèního  bloku (tj. té èíslo poloky v tabulce FAT). Pozor - dbejte na
+to,  e 12-bitové poloky mohou leet na pøelomu sektorù (není vhodné proto
+pouívat  bufferování  pouze  jednoho  sektoru  FAT).  Operace s 16-bitovou
+polokou  je  jednoduchá  -  kadé  slovo  v  tabulce obsahuje jednu adresu
+alokaèního  bloku (a tím i offset slova následující poloky v tabulce FAT).
+Pro 12-bitové poloky pouijte následující podprogramy:
+
+readfat12:                        ; pøeètení obsahu poloky FAT 12b
+                                  ; ES:0000 - adresa bufferu s tabulkou FAT
+                                  ; AX - èíslo poadovaného alokaè. bloku
+         push      bx
+         push      cx
+         push      dx
+         mov       cx,ax          ; úschova èísla poadovaného alok. bloku
+         mov       bx,0003
+         mul       bx             ; vynásobení èísla bloku 3*
+         mov       bx,0002
+         div       bx             ; vydìlení násobku /2 (tedy blok * 1.5)
+         mov       bx,ax          ; offset poloky ve FAT
+         mov       ax,es:[bx]     ; pøeètení slova z FAT z vypoètené adresy
+         test      cx,1           ; rozlišení, zda jde o lichı/sudı blok
+         jz        rdf12su        ; je sudı  blok
+         mov       cl,4           ; je lichı blok
+         shr       ax,cl          ; rotace slova o 4 bity vpravo
+rdf12su: and       ax,0fffh       ; AX = vıslednı obsah poloky FAT 12b
+         pop       dx
+         pop       cx
+         pop       bx
+         ret
+
+writefat12:                       ; nastavení obsahu poloky FAT 12b
+                                  ; ES:0000 - adresa bufferu s tabulkou FAT
+                                  ; AX - èíslo poadovaného alokaè. bloku
+                                  ; DI - nová hodnota poloky FAT
+         push      ax
+         pop       bx
+         push      cx
+         push      dx
+         push      di
+         mov       cx,ax          ; úschova èísla poadovaného alok. bloku
+         mov       bx,0003
+         mul       bx             ; vynásobení èísla bloku 3*
+         mov       bx,0002
+         div       bx             ; vydìlení násobku /2 (tedy blok * 1.5)
+         mov       bx,ax          ; offset poloky ve FAT
+         mov       ax,es:[bx]     ; pøeètení staré hodnoty slova z FAT
+         test      cx,1           ; rozlišení, zda jde o lichı/sudı blok
+         jz        wrf12su        ; je sudı blok
+         and       ax,0fh         ; zbytek pøedešlé poloky
+         mov       cl,4
+         shl       di,cl          ; rotace slova o 4 bity vlevo
+wrf12ko: or        ax,di          ; slouèení s druhou polokou
+         mov       es:[bx],ax     ; uloení nové hodnoty
+         pop       di
+         pop       dx
+         pop       cx
+         pop       bx
+         pop       ax
+         ret
+wrf12su: and       ax,0f000h      ; zbytek následující poloky
+         jmp       wrf12ko        ; uloení nové hodnoty
+
+
+Obsah poloek tabulky FAT:
+
+    První bajt FAT se nazıvá "popisovaè média" (nebo té identifikaèní bajt
+FAT - viz kapitolu Zavádìcí sektor disku). Následujících 5 bajtù (12-bitová
+FTA)  nebo  7  bajtù (16-bitová FAT) jsou nastaveny na 0FFH. Zbytek tabulky
+FAT   je  sloen  z  12-bitovıch  nebo  16-bitovıch  bunìk,  kadá  z  nich
+reprezentuje  jeden alokaèní blok disku. Tyto buòky mohou obsahovat jednu z
+následujících hodnot:
+
+         - (0)000H .................. volnı alokaèní blok
+         - (F)FF0H a (F)FF7H ....... rezervované alokaèní bloky
+         - (F)FF7H .................. vadnı blok (obsahuje vadnı sektor)
+         - (F)FF8H a (F)FFFH ....... konec alokaèního øetìzce souboru
+         - (0)002H a (F)FEFH ....... èíslo bloku následující v øetìzci
+
+         Pozn.: Nejvyšší  tetráda  hodnot  se  pouívá pouze pro 16-bitovou
+                tabulku  FAT; tzn. e vadnı sektor se v 12-bitvoé FAT znaèí
+                0FF7H a v 16-bitové FAT FFF7H.
+
+
+Pøevod èísla alokaèního bloku na èíslo sektoru:
+
+    Pokud  získáte  z adresáøové poloky èíslo poèáteèního alokaèního bloku
+souboru,  budete  moná  chtít  urèit  lokalizaci aktuálního sektoru disku,
+kterı  obsahuje data souboru (nebo podadresáøe). Musíte pøitom uvaovat, e
+poèáteèní  sektor  datové  oblasti  disku mùe bıt rùznı. Napø. pro disketu
+(nebo oddìlení DOS pevného disku) má disk následující strukturu:
+
+         - zavádìcí a rezervované sektory
+         - tabulka FAT èíslo 1
+         - tabulka FAT èíslo 2 (volitelná - nepouívá se u RAM diskù)
+         - základní (koøennı) adresáø
+         - datovı prostor (obsahuje všechny soubory a podadresáøe)
+
+    Kadá  sekce  této struktury mùe mít rùznou délku a musí bıt proto pro
+správnou  koverzi  èísla  bloku  na èíslo sektoru známa. Následující vztahy
+reprezentují jedinou dokumentovanou metodu k urèení èísla logického sektoru
+DOS z èísla alokaèního bloku.
+
+Sektorù_tabulek_FAT    = Tabulek_FAT * Sektorù_tabulky_FAT
+
+Sektorù_zákl._adresáøe = (Poloek_adresáøe * 32) / Bajtù_na_sektor
+
+Zaèátek_dat            = Rezervovanıch_sektorù + Sektorù_tabulek_FAT +
+                         + Sektorù_zákl.adresáøe
+
+
+Logickı_sektor = Zaèátek_dat + ((Poèáteèní_blok - 2) * Sektorù_na_blok
+
+
+    Všechny  potøebné poloky pro vıpoèet získáte buï ze zavádìcího sektoru
+disku  (logickı  sektor  0)  nebo z bloku parametrù BIOS (pokud máte k nìmu
+pøístup pomocí funkce DOS 44h - IOCTL).
+
+    Pokud  patøíte mezi odvánı typ lidí, mùete si usnadnit práci pouitím
+nedokumentované  funkce  DOS  32H  (poskytnutí  informací  o  disku), která
+provádí  shrnutí  všech  informací,  je  byly  ji jednou pøed-vypoèítány,
+vèetnì èísla sektoru zaèátku datové oblasti.
+
+    Pozn.: Vhodné  pouití  tìchto  informací  je napø. k vytvoøení vlastní
+           obsluhy   pro   vyhledávání   adresáøe  na  disku  pro  programy
+           provádìjící  vıpis  všech  souborù  a  adresáøù  na disku, nebo
+           vyhledávání  s  pøímım  pøístupem  na  sektory  adresáøù pracuje
+           zhruba dvakrát tak rychleji ne standardní sluba DOS.
+
+
+
+
+
+                    A d r e s á ø o v á   p o l o  k a
+
+    Adresáø  obsahuje  jednu adresáøovou poloku pro kadı soubor na disku.
+Kadá poloka má délku 32 bajtù.
+
+      Struktura adresáøové poloky:
+      +----------+-------+-------------------------------------------+
+      |  offset  | délka |         název                             |
+      +----------+-------+-------------------------------------------+
+      | 00H ( 0) |   8   | jméno souboru                             |
+      | 08H ( 8) |   3   | rozšíøení jména souboru                   |
+      | 0BH (11) |   1   | atributy souboru                          |
+      | 0CH (12) |  10   | rezervováno                               |
+      | 16H (22) |   2   | èas posledního zápisu                     |
+      | 18H (24) |   2   | datum posledního zápisu                   |
+      | 1AH (26) |   2   | poèáteèní alokaèní blok dat souboru       |
+      | 1CH (28) |   4   | velikost souboru                          |
+      +----------+-------+-------------------------------------------+
+
+    - Jméno souboru je 8 znakù ASCII. Pokud je jméno kratší ne 8 znakù, je
+      doplnìno  zprava  mezerami. DOS pouívá první bajt této poloky ještì
+      pro dva zvláštní kódy:
+
+         00H (0)   - konec pøidìlené pamìti adresáøe (tato poloka adresáøe
+                     nebyla dosud ještì nikdy pouita)
+         E5H (229) - volná  adresáøová  poloka (soubor specifikovanı touto
+                     polokou  adresáøe  byl  zrušen  a pokud jeho alokaèní
+                     bloky  nebyly pouity jinım souborem, lze tento soubor
+                     ještì  obnovit  -  místo  bajtu E5H se navrátí pùvodní
+                     první znak jména souboru).
+
+    - Rozšíøení  jména souboru jsou 3 znaky ASCII. Pokud je rozšíøení jména
+      souboru  kratší ne 3 znaky, je doplnìno zprava mezerami. Mezi jménem
+      souboru a rozšíøením jména souboru se neuvádí teèka. Rozšíøením jména
+      souboru mohou bıt samé mezery (tj. není rozšíøení jména souboru).
+
+    - Atributy souboru udávají bliší údaje o souboru:
+
+        +-+-+-+-+-+-+-+-+
+        |7 6 5 4 3 2 1 0|
+        +++++++++++++++++ bit
+         | | | | | | | +-> 0 (  1): pouze ètení souboru (Read-only "R/O")
+         | | | | | | +---> 1 (  2): skrytı soubor (Hidden "HID")
+         | | | | | +-----> 2 (  4): systémovı soubor (System "SYS")
+         | | | | +-------> 3 (  8): návìští disku (Volume Label "VOL")
+         | | | +---------> 4 ( 16): podadresáø (Directory "DIR")
+         | | +-----------> 5 ( 32): archivní soubor (Archive "ARC")
+         | +-------------> 6 ( 64): rezervováno (musí bıt nastaven na 0)
+         +---------------> 7 (128): rezervováno (musí bıt nastaven na 0)
+
+         - Pouze  ètení  souboru  -  takto oznaèené soubory lze pouze èíst,
+           nelze  do  nich  zapisovat  ani  je  nijak  modifikovat. Pokus o
+           otevøení  souboru  pro  vıstup nebo vytvoøení souboru se stejnım
+           jménem  vyvolá  chybové hlášení systému. Pøi vypisování adresáøe
+           se soubory vypisují normálním zpùsobem.
+
+         - Skrytı soubor - skryté soubory se neobjevují v systémovém vıpisu
+           adresáøe,   pøi   hledání  souborù  se  však  chovají  normálním
+           zpùsobem.
+
+         - Systémovı   soubor  -  takto  oznaèené  soubory  jsou  pouívány
+           operaèním  systémem (jako napø. IO.SYS, MSDOS.SYS). Tyto soubory
+           se neobjevují v normálním hledání souborù.
+
+         - Návìští disku je pouito pro oznaèení (pojmenování) disku pomocí
+           11  znakù.  Všechny další informace v adresáøové poloce návìští
+           jsou  ignorovány.  Návìští  není  soubor  -  pouívá pouze jednu
+           poloku adresáøe, ale neobsahuje ádná další data. Na disku mùe
+           bıt  pouze jedno návìští, které je umístìno v základním adresáøi
+           disku.
+
+         - Adresáø   -   tato   poloka   specifikuje  vnoøenı  podadresáø.
+           Podadresáø je normálnì vyjmut z hledání souborù.
+
+         - Archivní  soubor  -  tento  bit, pokud je nastaven, indikuje, e
+           soubor  byl  zmìnìn  od  doby,  kdy byl naposledy zálohován (tj.
+           nebyl  zálohován  programem BACKUP). Tento bit je nastaven vdy,
+           kdykoliv je do souboru zapisováno a potom je uzavøen.
+
+         Pozn.: Funkce  pro  hledání  souboru  (funkce  DOS  11H  a  4EH) s
+                atributem  nastavenım  na  0  vyhledá  všechny  soubory bez
+                nastavenıch  atributù  nebo  soubory s nastavenımi atributy
+                "pouze ètení souboru" a/nebo "archivní soubor".
+
+                Pøíznaky  adresáøe  a  návìští  disku  nelze mìnit pouitím
+                funkce DOS CHMOD (funkce 43H).
+
+    - Èas  posledního  záznamu udává èas, kdy byl soubor naposledy vytvoøen
+      nebo  aktualizován.  Hodina,  minuta  a  sekunda jsou zapsány ve dvou
+      bajtech takto:
+
+       vyšší bajt (relat. adresa 17H):     niší bajt (relat. adresa 16H):
+
+       15  14  13  12  11  10   9   8       7   6   5   4   3   2   1   0
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+      | H | H | H | H | H | M | M | M |   | M | M | M | S | S | S | S | S |
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+       |                 | |                         | |                 |
+       +- hodina (0-23) -+ +----- minuta (0-59) -----+ +- sekunda (0-29) +
+                                                      (údaj se vynásobí 2*)
+
+    - Datum posledního záznamu udává den, kdy byl soubor naposledy vytvoøen
+      nebo  aktualizován.  Rok,  mìsíc  a  den jsou zapsány ve dvou bajtech
+      takto:
+
+       vyšší bajt (relat. adresa 15H):     niší bajt (relat. adresa 14H):
+
+       15  14  13  12  11  10   9   8       7   6   5   4   3   2   1   0
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+      | R | R | R | R | R | R | R | M |   | M | M | M | D | D | D | D | D |
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+       |                         | |                 | |                 |
+       +------ rok (0-119) ------+ +-- mìsíc (1-12) -+ +--- den (1-31) --+
+    (k údaji se pøiète 1980, tj. 1980 a 2099)
+
+    - Velikost  souboru  udává velikost souboru v bajtech. První slovo této
+      poloky  udává  niší  øád  údaje.
+
+
+
+
+    P r e f i x   p r o g r a m o v é h o   s e g m e n t u   ( P S P )
+
+
+    Prefix  programového  segmentu  (Programm Segment Prefix - PSP) je èást
+programu  (datová  oblast dlouhá 256 bajtù) pøedcházející samotnı program a
+obsahující  pomocná  data  pro  práci programu. Prefix progamového segmentu
+(PSP) se pøi poadavku naètení programu vytvoøí na zaèátku volného prostoru
+pamìti  (tj.  za koncem ji pouitého pracovního prostoru RAM). Za PSP (tj.
+na  adresu  posunutou o 256 bajtù od zaèátku PSP) se naète program COM nebo
+EXE,  kterı  má  bıt  odstartován.  Na  zaèátek PSP vdy po startu programu
+ukazují  registry  DS:0000H  a ES:0000H (PSP tedy musí zaèínat na absolutní
+adrese,  která  je násobkem 16). Pøi naètení programù typu COM do pamìti se
+nastavuje  registr  CS  na zaèátek prefixu programového segmentu a ukazatel
+instrukcí  na  hodnotu  100H  (take  po  startu programu COM je CS=DS=ES a
+IP=100H).  Pøi  naètení programù typu EXE do pamìti se nastavuje registr CS
+na  datovı  segment,  kterı  následuje  ihned za PSP, ukazatel instrukcí se
+nastaví  obvykle na zaèátek programu (pokud není jinak specifikováno; take
+po  startu  programu EXE je DS=ES, CS=DS+0010H, IP=0). Na poloky v prefixu
+programového  segmentu  se  lze  tedy po startu programu odvolávat adresací
+pomocí  datového  segmentu  DS nebo pomocí segmentu ES, u programù typu COM
+ještì navíc pomocí programového segmentu CS.
+
+    Prefix programového segmentu má následující strukturu:
++--------+-------+--------------------------------------------------------+
+| offset | délka |             popis                                      |
++--------+-------+--------------------------------------------------------+
+|   00H  |   2   | instrukce INT 20H - ukonèení programu (viz popis)      |
++--------+-------+--------------------------------------------------------+
+|   02H  |   2   | vrchol  pamìti  (adresa  segmentu  vrcholu  alokèaního |
+|        |       | bloku pamìti programu)                                 |
++--------+-------+--------------------------------------------------------+
+|   04H  |   1   | rezervováno                                            |
++--------+-------+--------------------------------------------------------+
+|   05H  |   1   | instrukce INT 21H - vyvolání funkce DOS (viz popis)    |
++--------+-------+--------------------------------------------------------+
+|   06H  |   2   | volná pamì - poèet volnıch bajtù v segmentu (pro COM) |
++--------+-------+--------------------------------------------------------+
+|   08H  |   2   | rezervováno                                            |
++--------+-------+--------------------------------------------------------+
+|   0AH  |   4   | adresa  ukonèení  programu  (IP,CS).  Obsahuje pùvodní |
+|        |       | adresu   obsluhy   pøerušení   pro  ukonèení  programu |
+|        |       | (INTú22H).  Adresa  INTú22H  mùe  bıt  zmìnìna  podle |
+|        |       | poadavkù   uivatelského   programu.   Pøi   ukonèení |
+|        |       | programu DOS navrátí pomocí této poloky pùvodní obsah |
+|        |       | vektoru INTú22H.                                       |
++--------+-------+--------------------------------------------------------+
+|   0EH  |   4   | adresa  obsluhy uivatelského pøerušení <Ctrl>-<Break> |
+|        |       | (<Ctrl>-C)  (IP,CS).  Uivatelskı program mùe obsluhu |
+|        |       | uivatelského   pøerušení   <Ctrl>-<Break>  (<Ctrl>-C) |
+|        |       | (INTú23H)   zmìnit  podle  svıch  poadavkù.  DOS  pøi |
+|        |       | ukonèení   programu   navrátí  pùvodní  obsah  vektoru |
+|        |       | INTú23H z této poloky.                                |
++--------+-------+--------------------------------------------------------+
+|   12H  |   4   | adresa   obsluhy  kritickıch  chyb  (IP,CS).  Obsahuje |
+|        |       | pùvodní  adresu  obsluhy  kritickıch  chyb  (INTú24H). |
+|        |       | Adresa   INTú24H  mùe  bıt  zmìnìna  podle  poadavkù |
+|        |       | uivatelského  programu.  Pøi  ukonèení  programu  DOS |
+|        |       | navrátí  pomocí  této  poloky  pùvodní  obsah vektoru |
+|        |       | INTú24H.                                               |
++--------+-------+--------------------------------------------------------+
+|   16H  |   22  | rezervováno                                            |
++--------+-------+--------------------------------------------------------+
+|   2CH  |    2  | prostøedí - adresa segmentu prostøedí DOS              |
++--------+-------+--------------------------------------------------------+
+|   2EH  |   46  | rezervováno                                            |
++--------+-------+--------------------------------------------------------+
+|   5CH  |   16  | neotevøenı  standardní øídící blok souboru FCB1 (první |
+|        |       | parametr pøíkazového øádku - nastaveno po startu)      |
++--------+-------+--------------------------------------------------------+
+|   6CH  |   20  | neotevøenı  standardní øídící blok souboru FCB2 (druhı |
+|        |       | parametr pøíkazového øádku - nastaveno po startu)      |
++--------+-------+--------------------------------------------------------+
+|   80H  |    1  | délka parametru - poèet bajtù parametru pøíkaz. øádku; |
+|        |       | souèasnì té implicitní adresa diskovıch pøenosù DTA   |
++--------+-------+--------------------------------------------------------+
+|   81H  |  127  | parametr   pøíkazového  øádku  (zbytek  za  pøíkazem). |
+|        |       | Pouívá se té jako standardní DTA (adresa 80H)        |
++--------+-------+--------------------------------------------------------+
+
+Pozn.: Programy  by nemìly mìnit ádná data v prefixu programového segmentu
+       pod  adresou  5CH,  nebo  DOS  pouívá  tyto informace pøi ukonèení
+       programu (jejich zmìna mùe mít za následek havarii systému).
+
+       Druhı  øídící  blok  souboru FCB2 na adrese 6CH je pøepsán, pokud je
+       pouit  první  FCB  (na adrese 5CH) k otevøení souboru. To je z toho
+       dùvodu,  e  pro  první  FCB  je rezervováno pouze 16 bajtù, zatímco
+       poloka  FCB  vyaduje  prostor  37 bajtù (pøekryje tedy celı FCB2 i
+       bajt  délky  parametru pøíkazového øádku resp. první bajt standardní
+       vyrovnávací pamìti diskovıch pøenosù DTA na relativní adrese 80H).
+
+
+
+
+             Ø í d í c í   b l o k   s o u b o r u   ( F C B )
+
+
+    Prefix  programového  segmentu  PSP obsahuje místo pro dva øídící bloky
+souboru  (File  Control Block - FCB) na relativních adresách 005CH a 006CH.
+Popisy   systémovıch  slueb  se  tıkají  neotevøeného  a  otevøeného  FCB.
+Neotevøenı FCB je ten, kterı obsahuje jenom specifikátor diskové jednotky a
+jméno  souboru  (a  typ-rozšíøení  jména  souboru)  a  kterı mùe obsahovat
+maskovací  znaky (* = nahrazuje celı zbytek jména; ? = nahrazuje jeden znak
+ve  jménu,  tj. v poloce adresáøe mùe bıt na této pozici uveden libovolnı
+znak).  Otevøenı FCB má všechny poloky FCB vyplnìny systémovou slubou pro
+otevøení nebo vytvoøení souboru.
+
+Pozn.: Øídící  bloky  souboru  FCB jsou pozùstatky z operaèního systému DOS
+       verzeú1.  Je  vıhodnìjší manipulovat se soubory s pouitím novìjších
+       slueb  DOS,  které  pouívají identifikátor souboru (všechny funkce
+       nad 2EH pracující se soubory).
+
+
+    Struktura øídícího bloku souboru FCB:
++----------+-----+------------------------+-------------------+----------+
+|  offset  |délka|         název          | inicializován na  | nastaví  |
++----------+-----+------------------------+-------------------+----------+
+| 00H ( 0) |  1  | kód diskové jednotky   | specifikace disku | uivatel |
+| 01H ( 1) |  8  | jméno souboru          | jméno souboru     | uivatel |
+| 09H ( 9) |  3  | rozšíøení jména souboru| typ souboru       | uivatel |
+| 0CH (12) |  2  | aktuální blok          | 00H (0)           | DOS      |
+| 0EH (14) |  2  | délka jednoho záznamu  | 80H (128)         | DOS      |
+| 10H (16) |  4  | velikost souboru       | hodn. z adresáøe  | DOS      |
+| 14H (20) |  2  | datum posledního zápisu| hodn. z adresáøe  | DOS      |
+| 16H (22) |  2  | èas posledního zápisu  | hodn. z adresáøe  | DOS      |
+| 18H (24) |  8  | rezervováno            |                   |          |
+| 20H (32) |  1  | aktuální záznam        | podle funkce      | uivatel |
+| 21H (33) |  4  | relativní záznam       | podle funkce      | uivatel |
++----------+-----+------------------------+-------------------+----------+
+
+    Rozšíøenı  øídící  blok souboru (File Control Block Extended - FCBE) se
+pouívá k vytvoøení nebo hledání adresáøovıch poloek souborù se zvláštními
+atributy.  Rozšíøenı  øídící  blok  souboru  (FCBE) se liší od standardního
+øídícího  bloku  souboru  (FCB) pouze doplnìním tøí poloek pøed standardní
+øídící blok souboru (FCB) o celkové délce 7 bajtù. Vıznam ostatních poloek
+je  nezmìnìn. Pøi nastavení adresy FCB pro danou funkci se rozliší normální
+FCB  a  rozšíøenı  FCBE pouze prvním bajtem, kterı obsahuje buï èíslo disku
+(FCB) nebo identifikát rozšíøeného øídícího bloku souboru FFH (255).
+
+    Struktura rozšíøeného øídícího bloku souboru FCBE:
++----------+-----+------------------------+-------------------+----------+
+|  offset  |délka|         název          |    inic. na       | nastaví  |
++----------+-----+------------------------+-------------------+----------+
+|-07H (-7) |  1  | identifikátor FCBE     | FFH (255)         | uivatel |
+|-06H (-6) |  5  | rezervováno            | musí bıt nuly     | uivatel |
+|-01H (-1) |  1  | bajt atributù          | atribut souboru   | uivatel |
+| 00H ( 0) |  1  | kód diskové jednotky   | specifikace disku | uivatel |
+| 01H ( 1) |  8  | jméno souboru          | jméno souboru     | uivatel |
+| 09H ( 9) |  3  | rozšíøení jména souboru| typ souboru       | uivatel |
+| 0CH (12) |  2  | aktuální blok          | 00H (0)           | DOS      |
+| 0EH (14) |  2  | délka jednoho záznamu  | 80H (128)         | DOS      |
+| 10H (16) |  4  | velikost souboru       | hodn. z adresáøe  | DOS      |
+| 14H (20) |  2  | datum posledního zápisu| hodn. z adresáøe  | DOS      |
+| 16H (22) |  2  | èas posledního zápisu  | hodn. z adresáøe  | DOS      |
+| 18H (24) |  8  | rezervováno            |                   |          |
+| 20H (32) |  1  | aktuální záznam        | podle funkce      | uivatel |
+| 21H (33) |  4  | relativní záznam       | podle funkce      | uivatel |
++----------+-----+------------------------+-------------------+----------+
+
+Poloky øídícího bloku souboru (FCB, FCBE):
+
+    - Identifkátor FCBE je bajt nastavenı na hodnotu 0FFH (=255).
+
+    - Bajt  atributù  souboru  slouí k specifikaci atributù souboru, které
+      mají   bıt  nalezeny.  Pokud  specifikujete  nìjakou  kombinaci  bitù
+      skrytého  souboru  (hodnota  02H  =  bit 1), systémového souboru nebo
+      adresáøe,  funkce  hledání souboru bude vyhledávat normální soubory a
+      také soubory se specifikovanımi atributy. Pokud specifikujete atribut
+      návìští, bude funkce vyhledávat pouze poloky návìští disku. Archivní
+      a  read-only atributy nelze pouít jako kritérium pro hledání. Vıznam
+      jednotlivıch bitù atributu viz "Adresáøová poloka"-atribut souboru.
+
+    - Kód diskové jednotky udává èíslo disku, ke kterému se soubor vztahuje
+      (1=A,  2=B atd.). Pokud poloka obsahuje 00H (0), operace se vztahuje
+      k aktuálnímu (tj. vybranému) disku.
+
+    - Jméno souboru je 8 znakù ASCII. Pokud je jméno kratší ne 8 znakù, je
+      doplnìno  zprava mezerami. Pøi specifikaci vyhrazeného jména zaøízení
+      (napø. LPT1) se na konci jména neuvádí dvojteèka.
+
+    - Rozšíøení  jména souboru jsou 3 znaky ASCII. Pokud je rozšíøení jména
+      souboru  kratší ne 3 znaky, je doplnìno zprava mezerami. Mezi jménem
+      souboru a rozšíøením jména souboru se neuvádí teèka. Rozšíøením jména
+      souboru mohou bıt samé mezery (tj. není rozšíøení jména souboru).
+
+    - Aktuální  blok  pøedstavuje  ukazatel  na  blok  (skupina  napø.  128
+      záznamù),  kterı  obsahuje  aktuální záznám (tj. záznam, se kterım se
+      bude  provádìt  následující  disková  operace).  Systémová sluba pro
+      otevøení souboru nastaví tuto poloku na 0.
+
+    - Délka  jednoho  záznamu  udává délku logického záznamu v bajtech. DOS
+      nastavuje  tuto  poloku  po  otevøení  souboru  na  hodnotu 80H (128
+      bajtù).  Pokud  chcete  pouít  jinou hodnotu, zmìòte tuto poloku po
+      otevøení  souboru,  ne budete provádìt nìjakou diskovou operaci (tak
+      lze  napø.  èíst  ze souboru po jednotlivıch bajtech, pokud nastavíte
+      tuto poloku na hodnotu 1).
+
+    - Velikost  souboru  udává velikost souboru v bajtech. První slovo této
+      poloky  udává  niší  øád  údaje.  Tuto  poloku  nastavuje  DOS pøi
+      otevøení souboru podle údaje v poloce adresáøe souboru.
+
+    - Datum posledního záznamu udává den, kdy byl soubor naposledy vytvoøen
+      nebo  aktualizován.  Rok,  mìsíc  a  den jsou zapsány ve dvou bajtech
+      takto:
+
+       vyšší bajt (relat. adresa 15H):     niší bajt (relat. adresa 14H):
+
+       15  14  13  12  11  10   9   8       7   6   5   4   3   2   1   0
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+      | R | R | R | R | R | R | R | M |   | M | M | M | D | D | D | D | D |
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+       |                         | |                 | |                 |
+       +--- rok (1980 a 2099) --+ +-- mìsíc (1-12) -+ +--- den (1-31) --+
+    (k údaji se pøiète hodnota 1980)
+
+    - Èas  posledního  záznamu udává èas, kdy byl soubor naposledy vytvoøen
+      nebo  aktualizován.  Hodina,  minuta  a  sekunda jsou zapsány ve dvou
+      bajtech takto:
+
+       vyšší bajt (relat. adresa 17H):     niší bajt (relat. adresa 16H):
+
+       15  14  13  12  11  10   9   8       7   6   5   4   3   2   1   0
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+      | H | H | H | H | H | M | M | M |   | M | M | M | S | S | S | S | S |
+      +---+---+---+---+---+---+---+---+   +---+---+---+---+---+---+---+---+
+       |                 | |                         | |                 |
+       +- hodina (0-23) -+ +----- minuta (0-59) -----+ +- sekunda (0-29) +
+                                                      (údaj se vynásobí 2*)
+
+    - Aktuální záznam ukazuje na záznam (relativnì v aktuálním bloku - údaj
+      0  a  127),  s kterım bude provedena nejbliší disková operace. Tuto
+      poloku nastavuje uivatel pøed operací sekvenèního ètení a zápisu.
+
+    - Relativní  záznam ukazuje na aktuální záznam v souboru, s kterım bude
+      provedena  nejbliší  disková  operace  náhodného  ètení nebo zápisu.
+      Poloku  musí  nastavit  uivatel  pøed  operací náhodného ètení nebo
+      zápisu  (tj.  operace  se specifikovanım záznamem souboru). Relativní
+      záznam  se  vztahuje  relativnì k zaèátku souboru a je urèen pomocí 4
+      bajtù.  Pokud  je  délka  záznamu  menší  ne  64 bajtù, jsou pouity
+      všechny  4  bajty  této  poloky;  jinak jsou pouity pouze niší tøi
+      bajty.
+
+      Pozn.: Pokud  je  FCB  v  prefixu  programového segmentu na relativní
+             adrese  005CH,  je  poslední  bajt poloky relativního záznamu
+             zároveò  prvním  bajtem neformátované oblasti parametrù, která
+             zaèíná   na   relativní   adrese  0080H  prefixu  programového
+             segmentu. To je implicitní adresa diskového pøenosu.
+
+
+
+
+
+
+     S t a n d a r d n í   i d e n t i f i k á t o r y   s o u b o r ù
+
+
+    Identifikátory  souborù  jsou  2-bajtové poloky, pomocí nich se lze v
+DOS  odkazovat  pøi  diskovıch  operacích  na soubory nebo vstupnì/vıstupní
+zaøízení  (viz  funkce DOS 2CH a vıše). Identifikátory se pouívají u verzí
+DOS vyšších ne 2.0 (funkce jsou pøevzaty ze systému UNIX). Princip práce s
+identifikátory  je  ten,  e  pokud otevøete soubor, DOS navrátí 16-bitovou
+poloku, pøedstavující symbolickı odkaz na otevøenı soubor (maximální poèet
+identifikátorù  se  specifikuje  v  souboru CONFIG.SYS pøíkazem FILES). Zde
+jsou  uvedeny  standardní  identifikátory  souborù,  které  jsou  v systému
+rezervovány standardním vstupnì/vıstupním kanálùm.
+
+    Standardní vstupnì/vıstupní zaøízení:
+ +-----------------+-------------------------------------+---------------+
+ |   standardní    |                                     |               |
+ |  identifikátor  |               název                 |   oznaèení    |
+ |     souboru     |                                     |               |
+ +-----------------+-------------------------------------+---------------+
+ |        0        |   standardní vstupní zaøízení       |    Stdin      |
+ |        1        |   standardní vıstupní zaøízení      |    Stdout     |
+ |        2        |   standardní chybové zaøízení       |    Stderr     |
+ |        3        |   standardní doplòkové zaøízení     |    Stdaux     |
+ |        4        |   standardní tiskové zaøízení       |    Stdprn     |
+ +-----------------+-------------------------------------+---------------+
+
+    - Standardní  vstupní  zaøízení  (Stdin) je obvykle klávesnice, ale lze
+      provést pøesmìøování tak, e vstup bude èten ze souboru.
+
+    - Standardní  vıstupní  zaøízení  (Stdout)  je obvykle displej, ale lze
+      provést pøesmìøování tak, e vıstup bude zapisován do souboru.
+
+    - Standardní   chybové   zaøízení   (Stderr)  je  displej  a  nelze  je
+      pøesmìøovat   z  povelového  øádku.  Toto  zaøízení  se  pouívá  pro
+      zobrazení  chybovıch zpráv nebo pro zobrazení hlášení, která nechcete
+      pøesmìøovávat spolu se standardním vıstupem.
+
+    - Standardní  doplòkové zaøízení (Stdaux) je obvykle sériové zaøízení a
+      je  stejné  jako  zaøízení DOS "AUX:. Z tohoto zaøízení lze jak èíst,
+      tak na nì i zapisovat.
+
+    - Standardní  tiskové  zaøízení  (Stdprn)  je  obvykle tiskárna a je to
+      stejné  zaøízení  jako zaøízení DOS "PRN:". Z tohoto zaøízení lze jak
+      èíst, tak na nì i zapisovat.
+
+    Identifikátory  souborù,  které  byly  popsány  vıše, jsou otevøeny pøi
+prvním  startu  programu.  Nemusíte  explicitnì  otevírat  ádné  z  tìchto
+zaøízení, pokud døíve nìkterı z tìchto identifikátorù souboru neuzavøete.
+
+Pozn.: Všech pìt pøeddefinovanıch identifikátorù souboru jsou v ASCII módu,
+       kterı  znamená, e DOS reaguje na speciální vıznamy nìkterıch znakù,
+       vèetnì  <Ctrl>-<Break>  (<Ctrl>-C)  (pøerušení  programu),  <Ctrl>-S
+       (pauza   pøi  provádìní  programu)  a  <Ctrl>-P  (pøipojení/odpojení
+       tiskárny).  V  ASCII  módu  je  znak  <Ctrl>-Z  povaován  za znaèku
+       oznaèující  konec  souboru.  Znaky  ètené  ze standardního vstupního
+       zaøízení  Stdin  jsou  opakovány  na  obrazovku (echo). Øídící znaky
+       znaky zapisované na vıstupní a chybové zaøízení Stdout a Stderr jsou
+       zobrazeny  jako  posloupnost  znakù  "^"  a  X  (napø.  ^C  je  znak
+       pøerušení, kód 03H = 3). Tabelátory jsou nahrazeny mezerami tak, aby
+       nová pozice zaèínala na násobcích èísla 8.
+
+       Mód  tìchto zaøízení mùete zmìnit mezi ASCII módem a binárním módem
+       pouitím   volání   funkce   IOCTL  (funkce  DOS  44H).  Nutno  však
+       podotknout, e z dùvodu toho, e první tøi zaøízení (Stdin, Stdout a
+       Stderr) jsou vlastnì navzájem duplikovaná zaøízení, projeví se zmìna
+       módu na jednom zaøízení i na ostatních dvou zaøízeních.
+
+
+
+
+
+                         P r o s t ø e d í   D O S
+
+    DOS  pouívá pamìovı prostor, kterı obsahuje nastavení øetìzcù ASCIIZ,
+které mohou bıt pouity aplikaèními programy k obdrení informací na úrovni
+systému a k pøedávání dat jinım programùm.
+
+    - systémovı povel SET slouí všeobecnì v DOS k definici prostøedí.
+    - povely PATH a PROMPT také mìní obsah prostøedí
+    - V  povelovıch  souborech  lze  pouívat promìnné, které jsou oznaèené
+      jménem  promìnné  a ze stran ohranièeny znakem procent. Tyto promìnné
+      jsou pøi vykonávání povelového souboru nahrazovány svımi hodnotami.
+
+Napø.:   SET PATH=c:\adresar;%PATH%
+         IF .%USER%. == .potom. GOTO navesti_potom
+         ECHO %POROVNANI% > %SOUCASNA_TISKARNA^
+
+    Prostøedí  mùe  mít  omezenou velikost, avšak vìtší prostøedí DOS mùe
+bıt  vytvoøeno  pomocí direktivy "SHELL=" v souboru CONFIG.SYS nebo povelem
+"COMMAND  /e:NNNN",  kterı  startuje  druhou kopii povelového interpreteru,
+poskytující NNNN bajtù volného prostoru prostøedí.
+  +-----------------------+----------------------------------------------+
+  | tvar zápisu:          |    pøíklad pouití v mnemotechnice ASM:      |
+  +-----------------------+----------------------------------------------+
+  | jméno_1=hodnota_1(0)  |  db   'COMSPEC=c:\command.com',0             |
+  | jméno_2=hodnota_2(0)  |  db   'PROMPT=$P$G',0                        |
+  |        :              |  db   'WP=c:\wordproc',0                     |
+  | jméno_N=hodnota_N(0)  |  db   'PATH=d:\;c:\dos;c:\utility',0         |
+  | (0)                   |  db   0                                      |
+  +------------- Pro DOS 3.0 a vyšší: -----------------------------------+
+  | (xxxx)                |  dw   1                                      |
+  | øetìzec_EXEC_1(0)     |  db   'C:\ACCTNG\AR001.EXE',0                |
+  |      :                |  db   0                                      |
+  | øetìzec_EXEC_NN(0)    |                                              |
+  | (0)                   |                                              |
+  +-----------------------+----------------------------------------------+
+
+    kde (0) je ASCII znak NULL (kód 00H) a (xxxx) je 16-bitová hodnota.
+
+Pouití prostøedí:
+
+    Prostøedí  DOS  je  oblast  pamìti  menší  ne 32 KB a zaèíná na okraji
+odstavce. Èíslo odstavce, na kterém zaèíná prostøedí, je udáno na relativní
+adrese 2CH prefixu programového segmentu PSP právì probíhajícího programu.
+
+    Mùete  nalézt  zvolené  'jméno'  pomocí  série  porovnávacích  operací
+øetìzcù  ASCIIZ  dokud nenarazíte na nulovı øetìzec (tj. s nulovou délkou),
+indikující  konec  prostøedí.  Normálnì  je  èást  'jméno'  kadého øetìzce
+prostøedí ve velkıch písmenech avšak není to podmínkou.
+
+    Jednou  typickou  operací  s  prostøedím je pouití programù typu SHELL
+(tj.  nadstavby  operaèního  systému), které provádí druhé kopie povelového
+interpreteru  COMMAND.COM.  Tyto programy typicky hledají poloku prostøedí
+pojmenovanou  "COMSPEC" a pouijí její hodnotu jako oznaèení disku, cesty a
+specifikace  souboru  jako  oznaèení  povelového  interpreteru  DOS - tento
+program je naèten a spuštìn pomocí funkce DOS 4BH.
+
+    Nìkteré  programy  vyadují  operátor k uloení informace o specifikaci
+daného  aplikaèního  programu do prostøedí DOS pomocí povelu SET. Aplikaèní
+program  mùe pouívat tuto informaci pokadé, kdy je vyvolán. Napøíklad -
+textovı  procesor  mùe  hledat poloku nazvanou "TEXTY" a pouít text její
+hodnoty jako specifikaci adresáøe datovıch souborù.
+
+
+Základní prostøedí:
+
+    Kadı  program  obdrí  stálou kopii inicializaèního prostøedí systému.
+Take  jakékoliv zmìny, které provedete v prostøedí, budou mít úèinek pouze
+pro  všechny  synovské  (podøízené)  procesy  (pokud nìjaké jsou) ale budou
+ztraceny, kdy se øízení pøedá do otcovského procesu.
+
+    Není   dokumentována   ádná   cesta  k  nastavování  "koøenného"  nebo
+"hlavního"  prostøedí  DOS.  Jednou z nedokumentovanıch moností je pouití
+pøerušení  DOS  INTú2EH.  Mùete  mít  úspìch spuštìním kopie COMMAND.COM a
+prùchodem  spojovaného  prostøedí. Potom všechny jeho produkty obdrí kopii
+tohoto prostøedí.
+
+
+Umístìní zavádìcí cesty:
+
+    Pøi  odstartování  porgramu v DOS verze 3.00 a vyšší uloí DOS pøídavnı
+øetìzec za konec formálního prostøedí, kterı mùe bıt pouit k urèení disku
+a  adresáøe,  ze  kterého  byl program zavádìn. 'Chytré' aplikaèní programy
+mohou tuto pomoc vyuít k nalezení svıch pøekryvnıch a datovıch souborù.
+
+    To  je  velmi  dùleité,  nebo  DOS  3.0 umonil operátorovi vyvolávat
+program uvádìním jména cesty pøed jméno startovaného programu.
+
+    Následujícím   za  posledním  øetìzcem  ASCIIZ  prostøedí  je  bajt  0,
+indikující  konec  formálního  prostøedí. Následující dva bajty pøedstavují
+16-bitovı  èítaè  pøídavnıch  øetìzcù  (tato hodnota je normálnì 0001H). Za
+touto  binární  hodnotou  mùete nalézt øetìzec ASCIIZ specifikace souboru,
+kterı byl pouit funkcí DOS 4BH (EXEC) k naètení a odstartování programu.
+
+    Stejnì  tak  i  kdy  soubor  programu nebyl v aktuálním adresáøi a DOS
+musel  pouít  cestu  k  hledání  povelu (tj. øetìzec "PATH=..") k nalezení
+souboru  programu,  uloí  DOS  za  konec  prostøedí  správnou hodnotu plné
+specifikace souboru (d:\cesta\jméno_souboru.ext,0).
+
+
+
+
+
+       I n s t a l o v a t e l n é   d r i v e r y   z a ø í z e n í
+
+    Instalovatelné  drivery zaøízení umoòují vytváøet standardní rozhranní
+mezi systémem DOS a nestandardní souèástkou nebo zaøízením.
+
+    Instalovatelnı  driver zaøízení je speciálnì formátovanı program, kterı
+je  naèten  do  pamìti  pøi zavádìní operaèního systému. Naètení se provede
+pomocí  souboru CONFIG.SYS pøíkazovım øádkem 'DEVICE=<identifikace souboru>
+seznam  parametrù'.  Identifikace  souboru  udává  jméno  driveru resp. i s
+udáním  pøístupové cesty k tomuto souboru. Za identifikací souboru mùe bıt
+uveden   libovolnı   seznam  parametrù  pro  instalaci  driveru,  konkrétní
+struktura   parametrù   závisí  na  konkrétních  poadavcích  instalovaného
+driveru.
+
+    Soubor driveru zaøízení je binární soubor. Po pøekladu zdrojového textu
+v  assembleru  pouijte program EXE2BIN, kterım soubor konvertujete z tvaru
+EXE  do binárního tvaru. Na rozdíl od souborù ve formátu COM nevkládejte na
+zaèátek programu instrukci ORG 100H (soubor je pøekládán od adresy 0).
+
+    Pokud soubor CONFIG.SYS obsahuje pøíkaz 'DEVICE=' pro instalaci souboru
+driveru,  bude soubor driveru zaøízení daného jména nainstalován do øetìzce
+driverù  zaøízení.  To  má  ten  úèinek,  e instalovaná zaøízení budou mít
+pøednost  pøed  drivery  DOS pro zaøízení se stejnımi jmény. Napø. pokud je
+instalován  driver  ANSI.SYS,  kterı  má  jméno  zaøízení  CON:,  je  tímto
+zablokován standardní driver zaøízení CON:.
+
+
+    Na  zaèátku  souboru driveru zaøízení je umístìna 18-bajtová struktura,
+která se nazıvá záhlaví zaøízení:
+
++----------+-----------+----------------------------------------------+
+|  offset: | velikost: |                   popis:                     |
++----------+-----------+----------------------------------------------+
+| 00H ( 0) |    4      | adresa FAR následujícího zaøízení v øetìzci  |
+| 04H ( 4) |    2      | atributy zaøízení                            |
+| 06H ( 6) |    2      | offsetová adresa rutiny strategie            |
+| 08H ( 8) |    2      | offsetová adresa rutiny pøerušení            |
+| 0AH (10) |    8      | jméno zaøízení                               |
++----------+-----------+----------------------------------------------+
+
+- Následující  zaøízení: Tuto  poloku  nastavuje DOS pøi instalaci driveru
+                         zaøízení.    Obsahuje    vzdálenou   adresu   (tj.
+                         segment:offset)   zaèátku   døíve  nainstalovaného
+                         driveru.  Drivery  zaøízení se instalují do pamìti
+                         zdola   nahoru   -   poslední   driver   je   tedy
+                         nainstalován   nahoøe.  Prohledávání  driverù  pøi
+                         hledání  poadovaného  jména  zaøízení  probíhá od
+                         posledního  zaøízení  (tj.  shora dolù). Pøitom je
+                         adresa   následujícího  (tj.  nišího  v  øetìzci)
+                         zjištìna z této poloky. Poslední driver v øetìzci
+                         driverù  (tj.  nejniší)  má  nastavenu poloku na
+                         hodnotu  -1 (tj. FFFF:FFFFH). Pøi naèítání souboru
+                         driveru  do pamìti musí bıt nastavena tato poloka
+                         na  hodnotu  té  -1 (FFFF:FFFFH). Je-li v souboru
+                         víc   ne   jeden  driver,  bude  v  prvním  slovì
+                         ukazatele   relativní   adresa   dalšího   driveru
+                         zaøízení  v  souboru.  Poslední  driver zaøízení v
+                         souboru  musí mít ukazatel na pole záhlaví dalšího
+                         zaøízení nastaven na hodnotu -1 (tj. FFFF:FFFFH).
+
+- Atributy zaøízení: Slovo atributù zaøízení indikuje vlastnosti zaøízení.
+
+ +------+----------------------------------------------------------------+
+ |  bit |                        vıznam                                  |
+ +------+----------------------------------------------------------------+
+ |   0  | 1 = standardní vstupní zaøízení (stdin)                        |
+ |   1  | 1 = standardní vıstupní zaøízení (stdout)                      |
+ |   2  | 1 = standardní nulové zaøízení (NUL:)                          |
+ |   3  | 1 = hodinové zaøízení (CLOCK)                                  |
+ |  4,5 |   rezervováno (musí bıt 0)                                     |
+ |   6  | 1 = podporuje logická zaøízení                                 |
+ | 7-10 |   rezervováno (musí bıt 0)                                     |
+ |  11  | 1 = podporuje otevøení/uzavøení/vımìnu média                   |
+ |  12  |   rezervováno (musí bıt 0)                                     |
+ |  13  | 1 = je zaøízení s formátem NON-IBM (tj. nemá formát disku IBM) |
+ |  14  | 1 = podporuje øízení zaøízení pøes kanál IOCTL (funkce 44H)    |
+ |  15  | 1 = je znakové zaøízení; 0 = je blokové zaøízení               |
+ +------+----------------------------------------------------------------+
+
+     Pokud pøepisujete stand. zaøízení CON: (konzola), nastavte bity 0 a 1.
+
+     Zaøízení NUL nemùe bıt pøeøazeno (nepokoušejte se je pøepsat).
+
+     Bit  3  (hodinové  zaøízení) indikuje, zda je pøedefinováno standardní
+     hodinové  zaøízení  CLOCK$. CLOCK$ je znakové zaøízení ovládané pomocí
+     poadavkù  na zaøízení s délkou 6 bajtù. Vstupní poadavek (kód povelu
+     4)  by mìl navracet 6 bajtù indikujících aktuální èas/datum a vıstupní
+     poadavek  (kód povelu 8) by mìl pøijat 6 bajtù k nastavení èasu/data.
+     Formát dat pro CLOCK$ je:
+
+          +---------+---------+--------------------------------+
+          | offset  | velikost|            vıznam              |
+          +---------+---------+--------------------------------+
+          | 00H (0) |    2    | datum - poèet dnù od 1.1.1980  |
+          | 02H (2) |    1    | minuta (0-59)                  |
+          | 03H (3) |    1    | hodina (0-23)                  |
+          | 04H (4) |    1    | sekunda (0-59)                 |
+          | 05H (5) |    1    | setiny sekundy (0-99)          |
+          +---------+---------+--------------------------------+
+
+     Bit  6  (podporováno  logické  zaøízení)  indikuje, zda je podporováno
+     logické   zaøízení   (›   DOS   3.2)   -   viz   funkce   17H   a  18H
+     (poskytnutí/nastavení  logického  zaøízení).  Tímto  driverem je napø.
+     soubor DRIVER.SYS.
+
+     Bit  11  (podpora otevøení/uzavøení/RM) indikuje, zda jsou podporovány
+     poadavky  na  zaøízení  vztahující  se k vımìnnım médiím (0DH a 0FH)
+     tak,  aby  mohl  driver  blokového  zaøízení  optimalizovat  provádìné
+     operace  lokálním  shromaïováním  ve  vyrovnávacích pamìtech nebo aby
+     mohl driver znakového zaøízení vysílat inicializaèní posloupnost.
+
+     Bit  13  (formát  zaøízení  NON-IBM) má úèinek pøi poadavku sestavení
+     bloku parametrù BIOS BPB (02H).
+
+     Bit  14  (øízení kanálu IOCTL) indikuje podporu øízení zaøízení pomocí
+     øídícího kanálu (funkce DOS 44H).
+
+- Strategie  zaøízení: Tato  poloka  je  offset  ukazující na èást driveru
+                       (musí  bıt  ve  stejném  segmentu),  která  slouí k
+                       nastavení  adresy  poadavku  zaøízení  podle obsahu
+                       registrù  ES:BX. Adresu poadavku zaøízení nastavuje
+                       DOS  pøi  prvním  poadavku  pøístupu  na  zaøízení,
+                       driver  si  adresu  poadavku  zaøízení  uloí a pøi
+                       dalších  poadavcích na zaøízení se operace vztahují
+                       na   tuto  adresu.  (Ve  víceúlohovém  prostøedí  to
+                       umoòuje  vytváøet  øetìzec  poadavkù  typu  FIFO -
+                       první poadavek bude uspokojen první v poøadí).
+
+- Rutina pøerušení: Rutinu  pøerušení  volá  DOS bez jakıchkoliv parametrù.
+                    Jeho  èinnost  spoèívá  v  tom,  e za pouití poslednì
+                    definované  adresy  záhlaví  poadavku  provede operaci
+                    podle  kódu  povelu,  kterı  je v tomto záhlaví uveden.
+                    Rùzné  povely  zaøízení pouívají rùznou strukturu dat.
+                    Typicky   obsahuje  driver  urèité  mnoství  skokù  na
+                    obsluhy  jednotlivıch  poadavkù. Po ukonèení poadavku
+                    by  mìl  driver  nastavit stavové slovo zaøízení, které
+                    bude  indikovat  souhrn  chyb,  které  se bìhem operace
+                    vyskytly   a   potom  navrátit  øízení  do  DOS  pomocí
+                    instrukce FAR RET.
+
+- Jméno zaøízení: Obsahuje  jméno  zaøízení,  na  které  se  lze pomocí DOS
+                  odkazovat.  Jméno  zaøízení  je  ve formátu ASCII textu o
+                  maximálním poètu znakù 8, za jménem se neuvádí dvojteèka.
+                  Pokud  je  poèet znakù jména zaøízení menší ne 8, doplní
+                  se zprava mezerami.
+
+
+
+    Pomocí  rutiny  strategie  zaøízení informuje DOS driver o tom, na jaké
+adrese  (ES:BX)  je  umístìn  poadavek  zaøízení. Kadı poadavek zaøízení
+zaèíná  13-bajtovım  záhlavím  poadavku, za kterım následuje datová oblast
+promìnné  délky.  Záhlaví  poadavku  zaøízení  má  délku  13  bajtù  a  má
+následující strukturu:
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |    1     | délka tohoto poadavku (záhlaví a data)      |
+  | 01H ( 1) |    1     | èíslo jednotky (pouito pouze pro blok. zaø.)|
+  | 02H ( 2) |    1     | kód povelu (00H-18H) specifikující poad.akci|
+  | 03H ( 3) |    2     | stavové slovo zaøízení (nastavuje driver)    |
+  | 05H ( 5) |    8     | rezervováno                                  |
+  +----------+----------+----------------------------------------------+
+
+- Kód povelu: Kód  povelu  specifikuje, která akce je poadována, aby se se
+              zaøízením provedla. Kódy povelù jsou:
+
+  +------------+-----------------------------------------------+---------+
+  | kód povelu | vıznam                                        | pouití |
+  +------------+-----------------------------------------------+---------+
+  |  00H ( 0)  | inicializace zaøízení                         |   Z,B   |
+  |  01H ( 1)  | kontrola média                                |    B    |
+  |  02H ( 2)  | vystavìní bloku parametrù BIOS (BPB)          |    B    |
+  |  03H ( 3)  | vstup kanálu pro ovládání zaøízení (IOCTL)    |  Z,B,I  |
+  |  04H ( 4)  | vstup (ètení ze zaøízení)                     |   Z,B   |
+  |  05H ( 5)  | nedestruktivní vstup                          |    Z    |
+  |  06H ( 6)  | statut vstupu                                 |    Z    |
+  |  07H ( 7)  | vyprázdnìní vstupu                            |    Z    |
+  |  08H ( 8)  | vıstup (zápis na zaøízení)                    |   Z,B   |
+  |  09H ( 9)  | vıstup s verifikací                           |   Z,B   |
+  |  0AH (10)  | statut vıstupu                                |    Z    |
+  |  0BH (11)  | vyprázdnìní vıstupu                           |    Z    |
+  |  0CH (12)  | vıstup z kanálu pro ovládání zaøízení (IOCTL) |  Z,B,I  |
+  |  0DH (13)  | otevøení zaøízení               (DOS › 3.0)   |  Z,B,R  |
+  |  0EH (14)  | uzavøení zaøízení               (DOS › 3.0)   |  Z,B,R  |
+  |  0FH (15)  | vımìna média                    (DOS › 3.0)   |   B,R   |
+  |  13H (19)  | generování poadavku IOCTL      (DOS › 3.2)   |    I    |
+  |  17H (23)  | poskytnutí logického zaøízení   (DOS › 3.2)   |   Z,B   |
+  |  18H (24)  | nastavení logického zaøízení    (DOS › 3.2)   |   Z,B   |
+  +------------+-----------------------------------------------+---------+
+    Kódy pouití: Z = driver znakového zaøízení
+                  B = blokové zaøízení (pøedevším diskové drivery)
+                  I = musí podporovat øídící kanál zaøízení IOCTL
+                  R = musí podporovat otevøení/uzavøení/vımìnu média
+
+- Stavové slovo zaøízení: Stavové  slovo  musí  bıt nastaveno driverem vdy
+                          pøi  návratu  do  DOS.  Jednotlivé bity stavového
+                          slova  zaøízení  mají  vıznam  podle  následující
+                          tabulky:
+
+ +------+----------------------------------------------------------------+
+ |  bit |                        vıznam                                  |
+ +------+----------------------------------------------------------------+
+ |  0-7 | chybovı kód (viz následující tabulka)                          |
+ |   8  | 1 = akce provedena (po návratu z driveru vdy nastaven)        |
+ |   9  | 1 = zaneprázdnìn (pouze povely 06H a 0AH)                      |
+ | 10-14| rezervováno                                                    |
+ |  15  | 1 = nastala chyba                                              |
+ +------+----------------------------------------------------------------+
+
+     - Chybovı  kód  (bity  0  a 7) nastavuje driver v pøípadì, e nastala
+       bìhem  poadované  operace  chyba obsluhy zaøízení (bit 15 stavového
+       slova  je  nastaven).  Chybovı  kód  je  umístìn  do  niších 8 bitù
+       stavového slova, vıznam jednotlivıch kódù je následující:
+
+          +-------------+-------------------------------------------+
+          | chybovı kód |                  vıznam                   |
+          +-------------+-------------------------------------------+
+          |  00H ( 0)   |    porušení ochrany zápisu                |
+          |  01H ( 1)   |    neznámá jednotka                       |
+          |  02H ( 2)   |    zaøízení není pøipraveno               |
+          |  03H ( 3)   |    neznámı povel                          |
+          |  04H ( 4)   |    chyba kontrolního souètu (CRC)         |
+          |  05H ( 5)   |    špatná délka struktury poadavku       |
+          |  06H ( 6)   |    chyba vystavení                        |
+          |  07H ( 7)   |    neznámé médium                         |
+          |  08H ( 8)   |    sektor nenalezen                       |
+          |  09H ( 9)   |    v tiskárnì není papír                  |
+          |  0AH (10)   |    chyba zápisu                           |
+          |  0BH (11)   |    chyba ètení                            |
+          |  0CH (12)   |    všeobecná chyba                        |
+          |  0DH (13)   |    (rezervováno)                          |
+          |  0EH (14)   |    (rezervováno)                          |
+          |  0FH (15)   |    neplatná vımìna disku (DOS › 3.0)      |
+          +-------------+-------------------------------------------+
+
+     - Bit  èíslo  8 ("akce provedena") nastavuje driver vdy pøi normálním
+       ukonèení obsluhy poadavku.
+
+     - Bit  èíslo  9  ("zaneprázdnìn")  je  driverem nastaven v pøípadì, e
+       nelze  uspokojit  poadavek,  protoe  fyzické zaøízení je pouíváno
+       pøedešlım  poadavkem. To je také pouíváno k navrácení doplòujících
+       informací, jako napø. "øetìzec klávesnice není prázdnı" nebo "médium
+       bylo vymìnìno".
+
+     - Bit  èíslo 15 ("nastala chyba") pokud driver pøijme poadavek, kterı
+       nemùe  obslouit,  nebo  pokud  pøi  uspokojování poadavku nastane
+       chyba.  Pokud  je  chybovı bit nastaven, obsahují bity 0-7 stavového
+       slova zaøízení chybovı kód.
+
+
+
+
+    Za  záhlavím  poadavku následuje oblast dat. Délka této oblasti závisí
+na  kódu  povelu  (bajt  v záhlaví zaøízení s offsetem 2). Nìkteré z povelù
+sdílejí  identickou strukturu poadavku. Jiné pouívají zøetìzené struktury
+a nìkteré pouívají pouze záhlaví poadavku ke komunikaci s DOS.
+
+- Inicializace zaøízení (kód povelu 0): Driver   inicializuje   zaøízení  a
+                                        navrátí adresu konce pamìti, kterou
+                                        chce ponechat rezidentní.
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vıstup: poèet jednotek definovanıch tímto    |
+  |          |          |         driverem (bloková zaøízení)          |
+  | 0EH (14) |    4     | vıstup: koneèná adresa rezidentního kódu     |
+  | 12H (18) |    4     | vstup:  adresa øetìzce ASCIIZ z CONFIG.SYS   |
+  |          |          | vıstup: adresa bloku parametrù BIOS (BPB)    |
+  |          |          |         pro zaøízení (bloková zaøízení)      |
+  | 16H (22) |    1     | èíslo disku (0=A, 1=B atd.) (DOS › 3.0)      |
+  +----------+----------+----------------------------------------------+
+
+    Poèínaje   verzí   DOS   ›   3.0   obsahuje   offset  12H  (18)  adresu
+    (segment:offset)  textového  øetìzce  ASCIIZ, kterı následuje v souboru
+    CONFIG.SYS  za  povelem  "DEVICE=".  Tento  text  mùete èíst, pokud je
+    poadováno  pøedávání  parametrù  uivatelem.  Od této verze DOS je té
+    umístìno  na  offsetu  16H  (22)  èíslo  disku. To umoòuje driveru pøi
+    instalaci zobrazit hlášení informující uivatele o tom, jako kterı disk
+    byl  driver  nainstalován.  Bìhem inicializace mohou bıt pouity sluby
+    DOS 01H a 0CH (hlášení atd.).
+
+- Kontrola média (kód povelu 1): Driver urèí, zda bylo médium vymìnìno.
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vstup:  bajt popisovaèe média (DOS testuje,  |
+  |          |          |         zda byl zmìnìn)                      |
+  | 0EH (14) |    1     | vıstup: FFH = médium bylo vymìnìno           |
+  |          |          |         01H = médium je nezmìnìné            |
+  |          |          |         00H = není známé, zda bylo vymìnìno  |
+  | 0FH (15) |    4     | vıstup: adresa øetìzce ASCIIZ pøedchozího    |
+  | 16H (22) |    1     |         identifikaèního návìští (pokud bylo  |
+  |          |          |         médium vymìnìno a je podporováno     |
+  |          |          |         rozpoznání vımìny média              |
+  +----------+----------+----------------------------------------------+
+
+    Bajt   popisovaèe   média  (nazıvá  se  té  bajt  identifikátoru  FAT)
+    identifikuje   typ   média,   kterı  je  pouit  v  diskovém  zaøízení.
+    Bliší podrobnosti viz kapitolu Zavádìcí adresáø disku.
+
+- Vystavìní bloku parametrù
+  BIOS (kód povelu 02H):      Driver  navrátí  ukazatel  na  blok parametrù
+                              BIOS  (BPB)  pro  disketu,  která  je právì v
+                              disketové   mechanice.   Pokud   má  zaøízení
+                              atribut NON-IBM (není standardní formát IBM),
+                              potom  není  ukazatel  na offsetu 0EH (adresa
+                              bufferu)  definován. Pokud má zaøízení formát
+                              IBM,  potom  ukazuje tento ukazatel na buffer
+                              obsahující první sektor tabulky FAT (kterı je
+                              naèten   pøed  povelem  pro  vystavìní  bloku
+                              parametrù BIOS (BPB).
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vstup:  bajt popisovaèe média                |
+  | 0EH (14) |    4     | vstup:  adresa bufferu (FAT sektor 0)        |
+  | 12H (18) |    4     | vıstup: adresa bloku parametrù BIOS (BPB)    |
+  |          |          |         pro zaøízení (bloková zaøízení-disk) |
+  +----------+----------+----------------------------------------------+
+
+    Blok parametrù BIOS (BPB - délka 13 bajtù):
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |    2     | bajtù na sektor                              |
+  | 02H ( 2) |    1     | sektorù na alokaèní blok (cluster)           |
+  | 03H ( 3) |    2     | zavádìcí a rezervované sektory               |
+  | 05H ( 5) |    1     | poèet alokaèních tabulek souborù (FAT)       |
+  | 06H ( 6) |    2     | maximální poèet poloek adresáøe v zákl. adr.|
+  | 08H ( 8) |    2     | celkovı poèet sektorù na médiu (v oddìl.DOS) |
+  | 0AH (10) |    1     | popisovaè média (=1.bajt FAT)                |
+  | 0BH (11) |    2     | poèet sektorù v jedné alokaèní tab.soub.(FAT)|
+  +----------+----------+----------------------------------------------+
+    Podrobnosti viz rozdìlení disku MS-DOS.
+
+
+- Vstup, vıstup (povely 03H, 04H, 08H, 09H, 0CH):
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vstup:  bajt popisovaèe média                |
+  | 0EH (14) |    4     | vstup:  adresa bufferu pro pøenos dat (DTA)  |
+  | 12H (18) |    2     | vstup:  poèet bajtù (pro blokové zaøízení    |
+  |          |          |         poèet sektorù)                       |
+  | 14H (20) |    2     | vstup:  èíslo poèáteèního sektoru (pouze pro |
+  |          |          |         bloková zaøízení)                    |
+  | 16H (22) |    4     | vıstup: adresa øetìzce ASCIIZ identifikaèního|
+  |          |          |         návìští disku (pokud navrátí chybu   |
+  |          |          |         zaøízení 0FH - neplatná vımìna)      |
+  +----------+----------+----------------------------------------------+
+
+    Pøi povelech vstupu (03H, 04H) by mìl driver pøenést urèenı poèet bajtù
+    (pro  blokové  zaøízení  urèenı poèet sektorù) ze zaøízení do pamìti od
+    adresy, její adresa je zadána na offsetu 0EH.
+
+    Pøi povelech vıstupu (08H, 09H, 0CH) by mìl driver pøenést urèenı poèet
+    bajtù/sektorù z pamìti od adresy urèené offsetem 0EH do zaøízení.
+
+- Nedestruktivní ètení (kód povelu 05H): Tento  povel  se pouívá pouze pro
+                                         znaková zaøízení. Dává monost DOS
+                                         podívat  se  pøedem na znak, kterı
+                                         bude  pøedán pøi pøíštím poadavku
+                                         ètení   znaku  (pøi  této  operaci
+                                         driver  neèeká,  a je nìjakı znak
+                                         pøipraven).
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vıstup: hodnota bajtu, kterı je pøipraven    |
+  |          |          |         v øetìzci jako pøíští                |
+  +----------+----------+----------------------------------------------+
+
+- Statut (kódy povelù 06H a 0AH): Pøi tomto povelu nastavuje driver stavové
+                                  slovo  zaøízení,  co  umoòuje pøedevším
+                                  kontrolu bitu "zaneprázdnìn" (bit 9). Pøi
+                                  volání   statutu   vstupu   (povel   06H)
+                                  resetuje driver bit "zaneprázdnìn", pokud
+                                  v  bufferu  je  pøipraven  znak ke ètení.
+                                  Nastavuje  jej  na  1, pokud by povel pro
+                                  vstup  znaku vyadoval èekání zaøízení na
+                                  pøíchod  bajtu  (napø.  èekání na znaku z
+                                  klávesnice).  Pøi  volání statutu vıstupu
+                                  (povel    0AH)    resetuje   driver   bit
+                                  "zaneprázdnìn"   na  0,  pokud  neprobíhá
+                                  ádnı  poadavek  vıstupu a pøíští vıstup
+                                  by  probìhl  pøímo na zaøízení. Nastavuje
+                                  jej   na  1,  pokud  pøedchozí  poadavek
+                                  vıstupu nebyl dosud ještì ukonèen.
+
+- Vyprázdnìní (kódy povelù 07H a 0BH): Tyto  povely  poadují,  aby  driver
+                                       vyèistil   vstupní   nebo   vıstupní
+                                       vyrovnávací   pamìti   (tj.   zrušil
+                                       všechny bajty, které byly pøipraveny
+                                       ve  vyrovnávacích pamìtech pro vstup
+                                       nebo vıstup). To se vìtšinou pouívá
+                                       k  vymazání  kláves  z  klávesnicové
+                                       vyrovnávací pamìti.
+
+- Otevøení, uzavøení (kódy 0DH, 0EH): Tyto    povely   se   pouívají   pro
+                                      zaøízení,   která   podporují  funkci
+                                      "otevøení/uzavøení/vımìna média" (bit
+                                      11    atributu   zaøízení).   Bloková
+                                      zaøízení  mohou  pouívat tento povel
+                                      ke  správì lokálního vyrovnávání dat.
+                                      Poadavek  otevøení  média  (0DH)  se
+                                      provádí  pro  kadı  soubor  pøi jeho
+                                      otevøení,  uzavøení  média  (0EH)  se
+                                      poaduje  pøi  uzavøení  souboru.  To
+                                      umoòuje  driveru  urèit  èas, kdy je
+                                      moné   vyjmout   disk   z  disketové
+                                      mechaniky  a  provádìt  vyprazdòování
+                                      vyrovnávacích     pamìtí.     Znaková
+                                      zaøízení mohou pouívat tyto povely k
+                                      vyslání  inicializaèního  øetìzce  na
+                                      zaøízení    (napø.   tiskárnu)   nebo
+                                      resetovat  zaøízení  do  standardního
+                                      stavu.
+
+- Vımìna média (kód povelu 0FH): Tento   povel   se   pouívá  pro  bloková
+                                 zaøízení,     která    podporují    funkci
+                                 "otevøení/uzavøení/vımìna  média"  (bit 11
+                                 atributu  zaøízení).  Driver by mìl sdìlit
+                                 DOSu,  zda  je  podporována  vımìna média.
+                                 Povel    navrací    informaci    v    bitu
+                                 "zaneprázdnìn"  stavového  slova  zaøízení
+                                 (bit  9):  pokud  je tento bit = 0 znamená
+                                 to, e médium je vımìnné a naopak.
+
+- Generování poadavku IOCTL (kód 13H): Drivery DOS › 3.2, které v atributu
+                                        zaøízení   indikují  podporu  IOCTL
+                                        (øízení  vstupu/vıstupu)  musí  bıt
+                                        schopny   toto   volání  obslouit.
+                                        Pouívá   se   pro  rùzné  operace,
+                                        vèetnì    formátování   disku.   Je
+                                        navrhováno     ke     standardizaci
+                                        mezistyku pro rùzné typy diskù jako
+                                        logické  drivery diskovıch zaøízení
+                                        DRIVER.SYS.   Další  informace  viz
+                                        funkci DOS 44H (IOCTL).
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vstup:  èíslo funkce                         |
+  | 0EH (14) |    1     | vstup:  èíslo podfunkce                      |
+  | 0FH (15) |    2     | vstup:  hodnota v SI ve funkci DOS 44H       |
+  | 11H (17) |    4     | vstup:  hodnota pøedávaná v DI               |
+  | 15H (21) |    4     | vstup:  adresa balíku dat IOCTL              |
+  +----------+----------+----------------------------------------------+
+
+- Poskytnutí/nastavení logického
+  zaøízení (kódy povelù 17H a 18H): Drivery  DOS  ›  3.2,  které v atributu
+                                    zaøízení indikují podporu IOCTL (øízení
+                                    vstupu/vıstupu)  musí  bıt schopny toto
+                                    volání obslouit. Pouívá se jako cesta
+                                    k    pøístupu    na    "logické"   nebo
+                                    "symbolické"  disky  instalované pomocí
+                                    driveru  blokovıch zaøízení DRIVER.SYS.
+                                    Zprostøedkovává   metodu   dotazu  nebo
+                                    nastavení   driveru  na  logickı  disk,
+                                    kterı  bude  aktivní  pro  danı fyzickı
+                                    disk.    Pøi    poadavku    poskytnutí
+                                    logického  disku  (18H)  by  mìl driver
+                                    umístit    identifikátor   driveru   do
+                                    offsetu  0DH  (1=A,  2=B,  atd.). Pokud
+                                    driver  obsluhuje pouze jeden disk, mìl
+                                    by  v  tomto  poli navracet vdy 0. Viz
+                                    té  funkci DOS 44H (IOCTL) - podfunkce
+                                    0EH a 0FH.
+
+  +----------+----------+----------------------------------------------+
+  |  offset  | velikost |                  popis                       |
+  +----------+----------+----------------------------------------------+
+  | 00H ( 0) |   13     | záhlaví poadavku                            |
+  | 0DH (13) |    1     | vstup:  kód jednotky                         |
+  |          |          | vıstup: poslední vztané zaøízení            |
+  | 0EH (14) |    1     | vstup:  kód povelu                           |
+  | 0FH (15) |    2     | statut (nedokumentováno)                     |
+  | 11H (17) |    4     | adresa (rezervováno)                         |
+  +----------+----------+----------------------------------------------+
+
+
+
+
+
+     D r i v e r   ø í z e n í   k o n z o l y   A N S I . S Y S
+
+    K  nainstalování  driveru  pro rozšíøené ovládání konzoly ANSI.SYS musí
+bıt    uveden    v   instalaèním   souboru   CONFIG.SYS   pøíkazovı   øádek
+DEVICE=ANSI.SYS.  Uivatelskı  program  potom mùe vysílat znaky na konzolu
+pomocí  standardních  znakovıch  funkcí  (nebo mùete soubory vypsat pomocí
+povelu TYPE nebo ECHO).
+
+    V  následující  vıpisu oznaèují prvky v závorkách () parametry (obvykle
+numerické hodnoty v ASCII formátu) a znak <ESC> je znak s kódem 1BH (27).
++---------------------------+---------------------------------------------+
+|            syntaxe        |              funkce                         |
++---------------------------+---------------------------------------------+
+| <ESC>[(øádek);(pozice)H   | nastavení pozice kurzoru (standardnì        |
+|                           | je 1;1 - levı horní roh)                    |
++---------------------------+---------------------------------------------+
+| <ESC>[(øádek);(pozice)f   | stejná funkce jako pøedešlá                 |
++---------------------------+---------------------------------------------+
+| <ESC>[(øádkù)A            | pøesun kurzoru nahoru (standardní poèet     |
+|                           | øádkù je 1; nejde pøes horní okraj)         |
++---------------------------+---------------------------------------------+
+| <ESC>[(øádkù)B            | pøesun kurzoru dolù (standardní poèet       |
+|                           | øádkù je 1; nejde pøes spodní okraj)        |
++---------------------------+---------------------------------------------+
+| <ESC>[(pozic)C            | pøesun kurzoru vpravo; stand.=1             |
++---------------------------+---------------------------------------------+
+| <ESC>[(pozic)D            | pøesun kurzrou vlevo; stand.=1              |
++---------------------------+---------------------------------------------+
+| <ESC>[2J                  | zrušení obrazovky, kurzor do poèát.rohu     |
++---------------------------+---------------------------------------------+
+| <ESC>[K                   | zrušení zbytku øádku                        |
++---------------------------+---------------------------------------------+
+| <ESC>[6n                  | vıstup akt.øádku a pozice ve formì:         |
+|                           |      <ESC>[(øádek);(pozice)R                |
++---------------------------+---------------------------------------------+
+| <ESC>[s                   | uloení akt. pozice kurzoru (viz <ESC>[u)   |
++---------------------------+---------------------------------------------+
+| <ESC>[u                   | návrat kurzoru na poslednì uloenou pozici  |
++---------------------------+---------------------------------------------+
+| <ESC>[(atr.);...;(atr.)m  | nastavení atributù displeje. (atr.) jsou:   |
+|                           |     0 normální (bílá na èerné)              |
+|                           |     1 zvıraznìné (zvıšená intenzita znakù)  |
+|                           |     4 podtrené (pouze monochrom. displej)  |
+|                           |     5 blikající                             |
+|                           |     7 reverze (èerná na bílé)               |
+|                           |     8 nezobrazuje (pozadí=popøedí)          |
+|                           |    30 èerné popøedí                         |
+|                           |    31 èervené popøedí                       |
+|                           |    32 zelené popøedí                        |
+|                           |    33 luté popøedí                         |
+|                           |    34 modré popøedí                         |
+|                           |    35 fialové popøedí                       |
+|                           |    36 modrozelené popøedí                   |
+|                           |    37 bílé popøedí                          |
+|                           |    40 èerné pozadí                          |
+|                           |    41 èervené pozadí                        |
+|                           |    42 zelené pozadí                         |
+|                           |    43 luté (hnìdé) pozadí                  |
+|                           |    44 modré pozadí                          |
+|                           |    45 fialové pozadí                        |
+|                           |    46 modrozelené pozadí                    |
+|                           |    47 bílé pozadí                           |
++---------------------------+---------------------------------------------+
+| <ESC>[=(mód)h             | nastavení šíøky øádku obrazovky a videomódu |
+|                           |     0 40x25 textovı mód èerná a bílá        |
+|                           |     1 40x25 textovı mód barevnı             |
+|                           |     2 80x25 textovı mód èerná a bílá        |
+|                           |     3 80x25 textovı mód barevnı             |
+|                           |     4 grafickı mód 320x200 barevnı          |
+|                           |     5 grafickı mód 320x200 èernobílı        |
+|                           |     6 grafickı mód 640x200 èernobílı        |
+|                           |     7 pøesun kurzoru na konci øádku na novı |
++---------------------------+---------------------------------------------+
+| <ESC>[=7l                 | kurzor se z konce øádku nepøesune na novı ø.|
++---------------------------+---------------------------------------------+
+| <ESC>[(èíslo);...(èíslo)p | pøedefinuje klávesu na jinou hodnotu; první |
+|       nebo                | èíslo (nebo první znak v øetìzci) udává kód |
+| <ESC>["(øetìzec)"p        | klávesy, která má bıt pøedefinována, násle- |
+|       nebo                | dující hodnoty jsou nové hodnoty klávesy    |
+| <ESC>[(èíslo);"øetìzec"p  |   Následující pøíklad pøedefinuje klávesu   |
+|       nebo                |   F10 tak, aby vypsala DIR<Enter>:          |
+| rùzné kombinace           |      <ESC>[0;68;"DIR";13p                   |
+|                           |   (viz rozšíøené kódy kláves)               |
+|                           | K navrácení kódù káves na jejich pùvodní    |
+|                           | hodnoty nastavte tyto klávesy na jejich     |
+|                           | pùvodní kódy; napø. návrat hodnoty F10:     |
+|                           |      <ESC>[0;68;0;68p                       |
++---------------------------+---------------------------------------------+
+
+    K  zjištìní,  zda  je ANSI.SYS nainstalován, zobrazte funkci <ESC>[6n a
+ihned ètìte ze standardního vstupu. Mìl byjste zde pøeèíst údaj ve tvaru:
+    <ESC>[(øádek);(pozice)R.
+
+    Je  obtíné  experimentovat  se  sekvencí ANSI pøímo z povelového øádku
+systému DOS, neboø DOS neumoòuje pøímı vstup z klávesnice znaku ESC. Jedna
+z moností je pouít systémovı pøíkaz PROMPT:
+
+    PROMPT $e[7m                  nastaví inverzní video
+    PROMPT $e[0;68;"DIR";13p      pøedefinuje klávesu F10 na "DIR"<Enter>
+    PROMPT                        nastaví prompt do normálního stavu
+
+
+
+
+
+
+           D r i v e r   r o z š í ø e n é   p a m ì t i   E M S
+
+    Tato   kapitola  popisuje  formální  specifikaci  Lotus/Intel/Microsoft
+(EMS),  která  se  pouívá  k  pøístupu  k "rozšiøující" pamìti v systémech
+kompatibilních s PC.
+
+Definice:
+
+    - "Zvìtšená"  pamì  se  nachází  pouze  u  AT (poèítaèe PC zaloené na
+      procesoru  286). Je to pamì, která obsazuje fyzickı adresovı prostor
+      nad  1  Megabajt.  V  DOS 3.2 se pouívá zvìtšená pamì pouze pro RAM
+      disky (viz pøerušení INT 15H - funkce 87H a 89H).
+
+    - "Rozšíøená"   pamì   pouívá  pamìovou  desku  kompatibilní  s  EMS
+      (Expanded  Memory  Specifikation  -  specifikace  rozšíøené pamìti) a
+      softwarovı  driver pro správné pøipojení "stránek" pamìti, která mùe
+      bıt  pøepínána  na  nebo z fyzickıch adresovıch prostorù nad normální
+      hranici  640  KB  (tj.  nad  A000:0000H  -  tyto  adresy  se normálnì
+      pouívají pro videopamì a BIOS-ROM). Deska EMS vytváøí ètyøi stránky
+      po 16 KB (celkem 64KB) adresovatelné pamìti, které umoòují zapínat a
+      vypínat a 8 Megabajtù celkové pamìti.
+
+    EMS  (specifikace  rozšíøené  pamìti)  je  prùmyslovı standard dávající
+programùm  jako  je  LOTUS  1-2-3  apod.  monost  ukládání  dat pro dlouhé
+tabulky.  Pouívá  se  také  pro  RAM disky a pro tiskové spoolery (tisky v
+pozadí).  Nìkteré  RAM-rezidentní  programy pouívají pamì EMS k uschování
+stránek  s  daty  a  programy  (z  dùvodu  spotøebování  minimální pamìti z
+adresového prostoru 640 KB).
+
+    Pouití  pamìti  EMS  se umoní instalováním driveru zaøízení se jménem
+zaøízení "EMSXXXX0" a je na nì odkazováno jako EMM (manaer EMS). K urèení,
+zda  byl tento driver nainstalován, mùete pouít funkci DOS 3DH k pokusu o
+otevøení  tohoto zaøízení jako souboru. Po prvním otevøení mùete k získání
+statutu  pouít  funkci DOS 44H (IOCTL) - podfunkci 07H. Pokud je návratovı
+statut  (v  AL) = 0, potom není EMM instalován a existuje pro nìkteré úèely
+diskovı soubor se jménem "EMSXXXX0".
+
+    Pokud  je  driver EMM instalován, nastavuje vektor pøerušení INT 67H na
+své  záhlaví  zaøízení.  Take  další  cesta k testování pøítomnosti EMS je
+testování  adresy  vektoru  pro  INT 67H (0:091CH) a otestování offsetu 0AH
+této adresy. Zde by mìl bıt obsaen øetìzec znakù "EMSXXXX0".
+
+    K  pøístupu na obsluhu rozšíøené pamìti (EMS) pouijte vektor pøerušení
+INT 67H s kódem funkce nastavenım v registru AH:
+ 
++----------------+--------------------------------------------------------+
+|kód funkce (AH) |    vıznam                                              |
++----------------+--------------------------------------------------------+
+|   40H (64)     | poskytnutí statutu EMM                                 |
+|                | (pouijte po ujištìní se, e je EMM nainstalován)      |
+|                |   vıstup: AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   41H (65)     | poskytnutí fyzické adresy segmentu rámeèku EMS         |
+|                | (64K ve ètyøech 16K jednotkách)                        |
+|                |   vıstup: BX=adresa segmentu (pokud je AH=0)           |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   42H (66)     | poskytnutí celkové/volné pamìti                        |
+|                |   vıstup: DX=celkovı poèet stránek EMS (16K kadá)     |
+|                |           BX=poèet volnıch stránek EMS                 |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   43H (67)     | otevøení identifikátoru EMM a pøidìlení stránky        |
+|                |   vstup:  BX=poèet poadovanıch stránek                |
+|                |   vıstup: DX=identifikátor EMM (další operace)         |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   44H (68)     | mapování pamìti                                        |
+|                | (stránkování jedné ze ètyø pøidìlenıch stránek pamìti  |
+|                | do fyzického adresového prostoru)                      |
+|                |   vstup:  AL=èíslo fyzické stránky (0 a 3)            |
+|                |           BX=logická stránka (0 a [n-1], kde          |
+|                |               n je celkovı poèet stránek na ident.     |
+|                |           DX=identifikátor EMM                         |
+|                |   vıstup: AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   45H (69)     | uzavøení identifikátoru/uvolnìní stránek               |
+|                | (uvolní pamì pøidìlenou funkcí EMM 43H)               |
+|                |   vstup:  DX=identifikátor EMM                         |
+|                |   vıstup: AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   46H (70)     | poskytnutí èísla verze EMM                             |
+|                |   vıstup: AL=èíslo verze EMM v kódu BCD (0302H=3.2)    |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   47H (71)     | uloení mapovacího kontextu                            |
+|                | (EMM uloí aktuální mapování fyzickıch na logické      |
+|                | stránky EMM, take programy nebo drivery zaøízení      |
+|                | mohou pouít své vlastní mapování pøi svém bìhu)       |
+|                |   vstup:  DX=identifikátor EMM poadovaného procesu    |
+|                |   vıstup: AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   48H (72)     | navrácení mapovacího kontextu                          |
+|                | (EMM navrátí stránkové mapování, které bylo uloeno    |
+|                | pøedcházejícím volání funkce 47H se stejnım identifi-  |
+|                | kátorem. Diskové drivery a programy by mìly toto       |
+|                | pouít pøes návratem do aplikaèního programu.)         |
+|                |   vstup:  DX=ovladaè EMM poadovaného procesu          |
+|                |   vıstup: AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   49H (73)     | rezervováno - pro EMM verze 3.2 nedefinováno           |
++----------------+--------------------------------------------------------+
+|   4AH (74)     | rezervováno - pro EMM verze 3.2 nedefinováno           |
++----------------+--------------------------------------------------------+
+|   4BH (75)     | poèet stránek ovladaèe                                 |
+|                | (navrací poèet stránek EMS vlastnìné identifikátorem)  |
+|                |   vstup:  DX=identifikátor EMM (proces mùe mít více   |
+|                |                                 ne 1 identifikátor)   |
+|                |   vıstup: BX=poèet logickıch 16-K stránek vlastnìné    |
+|                |              identifikátorem (1-512)                   |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   4CH (76)     | poèet aktivních ovladaèù                               |
+|                | (pouívá se pøed voláním funkce EMM 4DH)               |
+|                |   vstup:  BX=èíslo aktivního identifikátoru            |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   4DH (77)     | poskytnutí informace o stránkách (všechny identif.)    |
+|                | (navrací pole informací popisující kolik pamìti EMS je |
+|                | pøidìleno aktivnímu identifikátoru)                    |
+|                |   vstup:  ES:DI=adresa vyrovnávací pamìti              |
+|                |   vıstup: BX=poèet aktivních identifikátorù EMM        |
+|                |           ES:DI=vyrovnávací pamì je zaplnìna          |
+|                |                 2-slovními polokami (poèet je v BX).  |
+|                |                 První slovo je èíslo identifikátoru    |
+|                |                 a druhé je celkovı poèet stránek       |
+|                |                 vlastnìnıch tímto identifikátorem      |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+|   4EH (78)     | poskytnutí/nastavení mapy zadané stránky               |
+|                | (Tato funkce je navrhována k podpoøe víceúlohového     |
+|                | operaèního systému pro umonìní plného ovládání EMS.   |
+|                | Mapovací pole mùe obsahovat rùzné hardwarovì závislé  |
+|                | informace.)                                            |
+|                |   vstup:  AL=èíslo podfunkce                           |
+|                |              AL=0 - poskytnutí mapovacích registrù     |
+|                |                     do pole na adrese ES:DI            |
+|                |              AL=1 - nastavení mapovacích registrù      |
+|                |                     z pole na adrese DS:SI             |
+|                |              AL=2 - poskytnutí a nastavení mapovacích  |
+|                |                     registrù (kombinace funkcí 1 a 2)  |
+|                |              AL=3 - dotaz na velikost vyrovnávací      |
+|                |                     pamìti potøebné pro funkce 0 a 2  |
+|                |   vıstup: AL=velikost bufferu mapovacích registrù (fn3)|
+|                |           ES:DI=buffer obsahuje pole informací EMS     |
+|                |                 (podfunkce 0 a 2)                     |
+|                |           AH=statut EMM                                |
++----------------+--------------------------------------------------------+
+
+    Po návratu z funkce zkontrolujte statut v AH. Pokud není AH=0, potom
+tato funkce nebyla provedena. Chyby navrácené v AH:
+
+   +--------+----------------------------------------------------------+
+   | statut |      vıznam                                              |
+   +--------+----------------------------------------------------------+
+   |  00H   |      ádná chyba; funkce byla úspìšná                    |
+   |  80H   |      vnitøní chyba driveru EMM                           |
+   |  81H   |      hardwarová chyba funkce pamìové desky EMS          |
+   |  82H   |      EMM je zaneprázdnìn                                 |
+   |  83H   |      neplatnı identifikátor                              |
+   |  84H   |      poadovaná nedefinovaná funkce                      |
+   |  85H   |      není volnı ádnı další identifikátor EMM            |
+   |  86H   |      chyba v uloení nebo navrácení mapovacího kontextu  |
+   |  87H   |      alokaèní poadavek byl delší ne celková pamì EMS  |
+   |  88H   |      alokaèní poadavek byl delší ne volné stránky      |
+   |  89H   |      nemùete otevøít identifikátor s poètem stránek 0   |
+   |  8AH   |      váš identifikátor nevlastní tak mnoho stránek       |
+   |  8BH   |      nepovolené mapování - jsou definovány pouze fyzické |
+   |        |      stránky 0 a 3                                      |
+   |  8CH   |      prostor pro ukládání mapovacích kontextù je plnı    |
+   |  8DH   |      mùete uloit kontext pouze jednou na identifikátor |
+   |  8EH   |      nemùete navrátit kontext bez pøedchozího uloení   |
+   |  8FH   |      parametr podfunkce není definovanı                  |
+   +--------+----------------------------------------------------------+
+
+
+
+
+
+
+                          P ø e r u š e n í   D O S
+
+    Pro  DOS  jsou  vyhrazena  pøerušení  INT 20H a INT 3FH. Tabulka adres
+obslunıch  programù  pøerušení (vektory pøerušení) je umístìna na adresách
+80H  -  FCH. Uivatelské programy mohou vyadovat pouze pøerušení 20H, 21H,
+25H,  26H  a  27H  (pro  DOS  verze  2.0  a vyšší jsou nejlepší metodou pro
+vyádání  pøerušení  20H  a 27H funkce 4CH a 31H). Pøerušení 22H, 23H a 24H
+nemohou  bıt  poadována  uivatelskımi  programy;  jsou  to pouze pamìová
+místa, kde je uloena adresa segmentu a relativní adresy.
+
+INT  20H (INT 32; 0:0080H) - ukonèení programu
+INT  21H (INT 33; 0:0084H) - volání funkce DOS
+INT  22H (INT 34; 0:0088H) - adresa ukonèení programu
+INT  23H (INT 35; 0:008CH) - adresa obsluhy pøerušení <Ctrl>-<Break>
+INT  24H (INT 36; 0:0090H) - adresa obsluhy kritickıch chyb
+INT  25H (INT 37; 0:0094H) - absolutní ètení z disku
+INT  26H (INT 38; 0:0098H) - absolutní zápis na disk
+INT  27H (INT 39; 0:009CH) - ukonèení s ponecháním programu v pamìti
+INT  28H (INT 40; 0:00A0H) - èasování úsekù DOS
+INT  29H (INT 41; 0:00A4H) - rezervováno
+INT  2AH (INT 42; 0:00A8H) - rezervováno
+INT  2BH (INT 43; 0:00ACH) - rezervováno
+INT  2CH (INT 44; 0:00B0H) - rezervováno
+INT  2DH (INT 45; 0:00B4H) - rezervováno
+INT  2EH (INT 46; 0:00B8H) - provedení povelu DOS
+INT  2FH (INT 47; 0:00BCH) - pøepínatelné pøerušení (DOS)
+INT  30H (INT 48; 0:00C0H) - rezervováno
+INT  31H (INT 49; 0:00C4H) - rezervováno
+INT  32H (INT 50; 0:00C8H) - rezervováno
+INT  33H (INT 51; 0:00CCH) - rezervováno
+INT  34H (INT 52; 0:00D0H) - rezervováno
+INT  35H (INT 53; 0:00D4H) - rezervováno
+INT  36H (INT 54; 0:00D8H) - rezervováno
+INT  37H (INT 55; 0:00DCH) - rezervováno
+INT  38H (INT 56; 0:00E0H) - rezervováno
+INT  39H (INT 57; 0:00E4H) - rezervováno
+INT  3AH (INT 58; 0:00E8H) - rezervováno
+INT  3BH (INT 59; 0:00ECH) - rezervováno
+INT  3CH (INT 60; 0:00F0H) - rezervováno
+INT  3DH (INT 61; 0:00F4H) - rezervováno
+INT  3EH (INT 62; 0:00F8H) - rezervováno
+INT  3FH (INT 63; 0:00FCH) - rezervováno
+
+
+
+
+ I N T    2 0 H (INT 32; 0:0080H) - ukonèení programu
+
+    vstup:    CS = adresa segmentu prefixu programového segmentu
+
+    vıstup:   není
+
+    Pøerušení  INT 20H ukonèí zpracovávanı proces a vrátí øízení otcovskému
+procesu   (normálnì   to  je  povelovı  interpreter  COMMAND.COM).  Všechny
+vyrovnávací  pamìti souborù se vyprázdní, navrátí se pùvodní obsahy vektorù
+pøerušení  INT  22H  (ukonèení  programu),  INT  23H (obsluha uivatelského
+pøerušení  Ctrl-Break) a INT 24H (obsluha kritické chyby) a pøedá se øízení
+na adresu vektoru pøerušení INT 22H.
+
+    Pøed  vyvoláním  tohoto  pøerušení  musí  registr  CS  obsahovat adresu
+segmentu  prefixu  programového  segmentu PSP. Pokud obsah registru CS není
+roven  segmentu PSP, mùete provést instrukci skoku JMP na adresu PSP:0000H
+nebo instrukci RET (provede se skok na tuto adresu). Z prefixu programového
+segmentu jsou po ukonèení obnoveny následující návratové adresy:
+
+           +------------------------------+--------------------+
+           | vıstupní adresa              |  relativní adresa  |
+           +------------------------------+--------------------+
+           | ukonèení programu (INT 22H)  |         0AH        |
+           | <Ctrl>-<Break> (INT 23H)     |         0EH        |
+           | kritická chyba (INT 24H)     |         12H        |
+           +------------------------------+--------------------+
+
+Pozn.: Pøed  vyádáním  tohoto  pøerušení je nutno uzavøít všechny soubory,
+       které zmìnily svou délku. Není-li zmìnìnı soubor uzavøen, jeho délka
+       se  nezaznamená  do adresáøe správnì (viz funkce 10H a 3EH pro popis
+       uzavøení souboru).
+
+       Pøerušení je ekvivalentní funkci 00H (pøerušení INT 21H).
+
+       Pøerušení  INT  20H  se pouívá témìø vdy pro ukonèení èinnosti pøi
+       pouití starıch .COM souborù. Nové programy by mìly všechny pouívat
+       funkci  4CH  (ukonèení  procesu),  nebo tato funkce nevyaduje, aby
+       registr  CS  ukazoval  adresu segmentu PSP a navíc umoòuje pøedávat
+       otcovskému procesu vıstupní kód.
+
+       Programy  ve formátu COM obvykle bìí s nastavenım registrem CS=PSP,
+       take  mohou  kdykoliv  provést  ukonèení  programu  pomocí INT 20H.
+       Programy ve tvaru EXE by mìly provést instrukce FAR JMP nebo FAR RET
+       k  pøedání  øízení na adresu PSP:0000H, která obsahuje instrukci INT
+       20H.
+
+       Z tohoto pøerušení neexistuje monost návratu.
+
+
+
+
+ I N T    2 1 H (INT 33; 0:0084H) - volání funkce DOS
+
+    vstup:    AH = èíslo funkce
+              ostatní registry = obsah podle poadavkù funkcí
+
+    vıstup:   podle specifikací jednotlivıch funkcí
+
+    Toto  pøerušení  je  vstupním  bodem  do  vìtšiny  funkcí  DOS. Program
+poadující  funkci DOS musí pøipravit nejdøíve všechny registry a informace
+v  øídících  blocích, nastavit do registru AH èíslo poadované funkce DOS a
+potom  vyvolat  pøerušení  INT  21H.  Popis jednotlivıch funkcí viz "Sluby
+modulu DOS".
+
+
+
+
+
+ I N T    2 2 H (INT 34; 0:0088H) - adresa ukonèení programu
+
+    Pøi  ukonèení  programu  se  pøedá  øízení  na adresu popsanou vektorem
+INTú22H  (adresa  vektoru  je  0000:0088H).  Tuto  adresu  kopíruje DOS pøi
+vytvoøení  programového segmentu PSP (pøi vyvolání programu funkcí 4BH nebo
+pøi  vyvolání  funkce  26H  -  vytvoøení PSP) do jeho prefixu na adresu 0AH
+(adresa ukonèení programu). Návratovou adresu z programu lze zmìnit voláním
+funkce  25H  (nastavení  vektoru  pøerušení).  DOS  normálnì nastavuje tuto
+adresu pøi provádìní programu voláním funkce EXEC. Pøi ukonèení programu se
+adresa   INTú22H  navrátí  z  prefixu  programového  segmentu  ukonèovaného
+programu  zpìt  do pùvodního stavu. Program mùe bıt ukonèen buï pøerušením
+INT 20H nebo INT 27H nebo funkcemi 00H, 4CH (EXIT) nebo 31H (KEEP).
+
+    DOS  pouije  tento  vektor  té  pøi poadavku pøerušení bìhem INT 24H
+(obsluha kritické chyby).
+
+Pozn.: Nevyvolávejte INT 22H ani obsluhu tohoto pøerušení pøímo.
+
+
+
+
+ I N T    2 3 H (INT 35; 0:008CH) - adresa obsluhy pøerušení Ctrl-Break
+
+    Jestlie  uivatel  bìhem  vstupu  z klávesnice nebo vıstupu na displej
+stiskne  <Ctrl>-<Break>  (<Ctrl>-C),  pøedá  se  øízení  na  adresu obsluhy
+pøerušení Ctrl-Break urèenou vektorem INT 23H. Tato adresa se pøi vytvoøení
+programového   segmentu  (tj.  pøi  funkci  DOS  26H  -  vytvoøení  prefixu
+programového segmentu PSP, nebo funkci DOS 4BH - naètení programu do pamìti
+a  jeho  start)  kopíruje  do  jeho prefixu na relativní adresu 0EH (adresa
+obsluhy  pøerušení  Ctrl-Break).  Po  ukonèení  programu se pùvodní hodnota
+vektoru INT 23H z této adresy PSP navrátí.
+
+    Jestlie  rutina obsluhy Ctrl-Break uchovává všechny registry, mùe bıt
+ukonèena  pomocí  instrukce IRET (návrat z pøerušení) a pokraèuje provádìní
+programu.  Pøi  vıskytu  pøerušení  se všechny registry nastaví na hodnotu,
+kterou  mìly  v  okamiku,  kdy  program  volal funkci DOS, která zpùsobila
+pøerušení  Ctrl-Break.  Na  èinnost obsluhy Ctrl-Break nejsou kladena ádná
+omezení  -  vèetnì  volání  funkcí DOSu - za pøedpokladu, e se pøi pouití
+IRET  nezmìní  registry.  Avšak  pokud  obslunı program pøerušení obsahuje
+funkce  DOS pro znakovı vstup/vıstup a uivatel opìt stiskne <Ctrl>-<Break>
+(<Ctrl>-C), operaèní systém havaruje. K nastavení vektoru INT 23H na adresu
+vašeho  obsluného  programu  pouijte  funkci  25H. Pokud chcete pøerušení
+Ctrl-Break ignorovat, nastavte jako obsluhu pøerušení pouze instrukci IRET.
+
+    Jestlie  je pomocí <Ctrl>-<Break> pøerušena funkce 09H (vıstup øetìzce
+na obrazovku) nebo 0AH (vstup øetìzce z klávesnice), objeví se na obrazovce
+posloupnost bajtù 03H, 0DH, 0AH (ETX, CR, LF; bajt 03H se zobrazí jako text
+"^C")  a  funkce  pokraèuje  na  zaèátku  dalšího øádku. Standardní obsluha
+pøerušení  INT  23H  zpùsobí  návrat  do  otcovského  procesu  (obvykle  do
+povelového interpreteru COMMAND.COM).
+
+    Jestlie program vytváøí novı segment a zavádí do pamìti druhı program,
+kterı  mìní adresu obsluhy Ctrl-Break, pak se pøi ukonèení druhého programu
+hodnota  adresy  obsluhy  Ctrl-Break vrátí do stavu pøed provádìním druhého
+programu (hodnota vektoru se obnoví s prefixu programového segmentu PSP).
+
+    Normálnì  provádí  DOS  kontrolu  pøerušení Break pouze bìhem znakovıch
+vstupnì/vıstupních  funkcí  - tj. pøístup na konzolu, tiskárnu nebo sériové
+rozhraní,  s  rozšíøenou kontrolou Break (viz pøerušení INTú21H/funkce 33H)
+také  bìhem  všech  ostatních vstupnì/vıstupních funkcí (kromì funkcí 06H a
+07H).
+
+    Pokud  si  pøejete  abortovat  program  (návrat do otcovského procesu),
+nastavte  pøíznak  pøenosu CF a proveïte instrukci návratu pomocí instrukce
+FAR  RET.  To zpùsobí, e DOS provede normální úklid a odchod do otcovského
+procesu.
+
+    Nejjednodušší  cestou,  jak  zajistit správnou odezvu procesu na zadání
+<Ctrl>-<Break>  (<Ctrl>-C),  je  provádìt  kadou  chvíli  funkci  DOS  0BH
+(kontrola vstupního statutu konzoly).
+
+
+
+
+ I N T    2 4 H (INT 36; 0:0090H) - adresa obsluhy kritickıch chyb
+
+    vstup:    AX = doplòující informace o chybì
+              DI = kód chyby
+              BP:SI = záhlaví zaøízení
+
+    Jestlie  se  pøi  provádìní  systémovıch  slueb  I/O  na disku objeví
+kritická  chyba  disku (napø. vadnı sektor nebo jiná chyba hardware), pøedá
+se  øízení na adresu urèenou vektorem INT 24H. Tato adresa se pøi vytvoøení
+programového   segmentu   (pomocí   funkce  DOS  26H  -  vytvoøení  prefixu
+programového  segmentu  PSP,  nebo funkce DOS 4BH - naètení programu a jeho
+start)  kopíruje  do  jeho  prefixu  na  relativní  adresu 12H. Po ukonèení
+programu  (tj. pøi návratu do otcovského procesu) se adresa vektoru INT 24H
+z  prefixu programového segmentu opìt obnoví na pùvodní hodnotu, jakou mìla
+pøed startem programu.
+
+    Kdy  pøerušení  INT  24H  pøedá  øízení  programu  pro ošetøení chyby,
+registry AX a DI obsahují kódy popisující tuto chybu (tyto hodnoty registrù
+nastavuje  systémová  sluba  pøed  vyvoláním  pøerušení INT 24H). Pokud se
+chyba  vztahuje  k diskovım operacím, je bit 7 registru AH vynulován. Je-li
+bit  7  registru  AH  nastaven  na  1,  znamená to obvykle, e se nejedná o
+diskovou  chybu (aèkoliv chyba ve špatném zobrazení tabulky alokace souborù
+FAT  také  nastavuje bit 7 registru AH na 1). Bity 0-7 registru DI obsahují
+kód  chyby  (bity  8-15  nejsou definovány). Registry BP:SI obsahují adresu
+øídícího   bloku  záhlaví  zaøízení,  kde  mohou  bıt  vyhledány  doplòkové
+informace.
+
+     V  pøípadì, kdy je 7. bit AH vynulován (tj. chyba blokového zaøízení),
+obsahuje  AL identifikaèní èíslo diskové mechaniky (0=A, 1=B, atd.), bity 0
+a  5  registru  AH  obsahující tyto doplòující informace (bity 3 a 5 jsou
+definovány pouze pro operaèní systém DOS 3.x a vyšší):
+
++---+---+---+---+---+---+---+---+-----------------------------------------+
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |                vıznam                   |
++---+---+---+---+---+---+---+---+-----------------------------------------+
+| 0 | 0 | . | . | . | . | . | 0 | chyba ètení                             |
+| 0 | 0 | . | . | . | . | . | 1 | chyba zápisu                            |
+| 0 | 0 | . | . | . | 0 | 0 | . | chyba zahrnující systémové soubory DOS  |
+| 0 | 0 | . | . | . | 0 | 1 | . | chyba zahrnující FAT disku              |
+| 0 | 0 | . | . | . | 1 | 0 | . | chyba zahrnující adresáø disku          |
+| 0 | 0 | . | . | . | 1 | 1 | . | chyba zahrnující datovı prostor disku   |
+| 0 | 0 | . | . | 1 | . | . | . | moné opuštìní operace s FAIL-chyba     |
+| 0 | 0 | . | 1 | . | . | . | . | moné opuštìní operace s RETRY-opakování|
+| 0 | 0 | 1 | . | . | . | . | . | moné opuštìní operace s IGNORE-ignorov.|
++---+---+---+---+---+---+---+---+-----------------------------------------+
+
+    V  pøípadì,  e  je  7.  bit  registru AH nastaven (tj. chyba znakového
+zaøízení), nejsou bity 0 a 6 registru AH definovány.
+
+    Bity  0-7 registru DI obsahují následující informace (vyšší bity nejsou
+definována):
+
+ +--------------+-------------------------------------------------------+
+ | chybovı kód  |                      popis                            |
+ +--------------+-------------------------------------------------------+
+ |  00H ( 0)    |       pokus o zápis na disk chránìnı proti zápisu     |
+ |  01H ( 1)    |       neznámé èíslo jednotky (diskové)                |
+ |  02H ( 2)    |       disková jednotka není pøipravena                |
+ |  03H ( 3)    |       neplatnı pøíkaz                                 |
+ |  04H ( 4)    |       chyba dat (chyba kontrolního souètu CRC)        |
+ |  05H ( 5)    |       špatná délka struktury poadavku                |
+ |  06H ( 6)    |       chyba pøi vystavení                             |
+ |  07H ( 7)    |       neznámı typ média                               |
+ |  08H ( 8)    |       sektor nenalezen                                |
+ |  09H ( 9)    |       v tiskárnì není papír                           |
+ |  0AH (10)    |       chyba pøi zápisu                                |
+ |  0BH (11)    |       chyba ètení                                     |
+ |  0CH (12)    |       všeobecná, nespecifikovatelná chyba             |
+ +--------------+-------------------------------------------------------+
+
+    Pøerušení  obsluhy  kritické chyby mùete obslouit nabídkou další akce
+uivateli  (tj.  napø.  vızva  k  uzavøení  dvíøek disketové mechaniky nebo
+zapnutí  tiskárny).  Obsluha  pøerušení  INT  24H by nemìla pouívat funkce
+DOSu.  Je-li  to  nezbytné, mùe pouít funkce 01H a 0CH (znakové vstupy a
+vıstupy)  a  funkci  59H (rozšiøující chybové informace). Pouití jakékoliv
+jiné sluby znièí zásobník DOSu a ponechá DOS v nedefinovaném stavu. Pomocí
+funkce  DOS  59H  (rozšiøující chybové informace) a pomocí záhlaví zaøízení
+adresovaného BP:SI mùete obdret rozšiøující informace o vzniklé chybì.
+
+    Uivatelskı  zásobník  bude  na  zaèátku  programu pro obsluhu kritické
+chyby   obsahovat   hodnoty  nastavení  registrù  programu,  kterı  vyvolal
+pøíslušnou  funkci  DOS.  K navrácení tìchto informací pouijte následující
+instrukce:
+
+         push      bp                  ; pomocné uloení registru BP
+         mov       bp,sp               ; BP jako ukazatel dat v zásobníku
+
+    Obsah  dat  v uivatelském zásobníku od vrcholu na dno zásobníku (první
+poloka dále popsaná je na vrcholu zásobníku, tedy naposledy uloená) je:
+ 
++----------+-------------------------------------------------------------+
+|  SP      | hodnota BP, která byla uloena pomocnou instrukcí PUSH BP   |
+|  SP +  2 | CS:IP ukazatel sluby DOS, která vyvolala pøerušení INT 24H |
+|  SP +  6 | registr pøíznakù pøi pøerušení ze sluby DOS                |
+|  SP +  8 | AX (uivatelskı registr v okamiku pùvodní ádosti INT 21H) |
+|  SP + 10 | BX                        -  "  -                           |
+|  SP + 12 | CX                        -  "  -                           |
+|  SP + 14 | DX                        -  "  -                           |
+|  SP + 16 | SI                        -  "  -                           |
+|  SP + 18 | DI                        -  "  -                           |
+|  SP + 20 | BP                        -  "  -                           |
+|  SP + 22 | DS                        -  "  -                           |
+|  SP + 24 | ES                        -  "  -                           |
+|  SP + 26 | CS:IP z programu, kterı pùvodì vyvolal slubu INT 21H       |
+|  SP + 30 | registr pøíznakù z programu, kterı pùvodnì vyvolal slubu   |
++----------+-------------------------------------------------------------+
+
+    Tyto  informace  lze  pouít  k urèení, která funkce DOS vyvolala chybu
+(èíslo  funkce  je  uloeno v zásobníku na offsetu SP+9, tj. v uivatelském
+registru AH, parametry jsou uloeny v ostatních registrech).
+
+    Pøi  návratu z pøerušení instrukcí IRET (po obsluze chyby nebo pokusu o
+její odstranìní) bude DOS pokraèovat v èinnosti podle obsahu AL takto:
+
+AL = 0 - ignorování chyby
+   = 1 - opakování operace
+   = 2 - ukonèení programu prostøednictvím INT 23H (abortování)
+   = 3 - návrat do aplikaèního programu s ohlášením chyby DOS (› DOS 3.00)
+
+    Volba  AL=3  by  se zdála bıt nejvodnìjší. Napøíklad: pokud operace pro
+otevøení souboru zpùsobí chybu vzniklou z dùvodu nedostatku místa na disku,
+bylo  by  moné  nechat  váš  program  obslouit tento stav bìnımi zpùsoby
+obsluhy chyb. Avšak to má tyto nevıhody:
+
+    - volba AL=3 není povolená pro verze DOS menší ne DOS 3.00
+    - DOS  vdy  navrací  chybovı  kód  53H  (chyba  obsluhy kritické chyby
+      INTú24H), kterı neobsahuje mnoho informací
+
+
+Pozn.: Pøed  pøedáním  øízení obluze pøerušení INT 24H v dùsledku diskovıch
+       chyb se DOS pìtkrát pokouší o nové provedení operace.
+
+       Rutina se spustí v zablokovaném stavu.
+
+       Registry SS, SP, DS, ES, BX, CX a DX je nutno zachovat.
+
+       Pøerušovací program nesmí zmìnit obsah záhlaví zaøízení.
+
+       Normální  obsluha  pøerušení INT 24H nabídne uivateli monost volby
+       další èinnosti DOS:
+                 Abort, Retry, Ingore, Fault ? _
+            (tj. Abortovat, opakovat, ignorovat, ohlásit chybu ?)
+
+       Pøerušení  INT  24H se neprovede, jestlie se chyba objeví v prùbìhu
+       provádìní  pøerušení  INT 25H (absolutní ètení z disku) nebo INT 26H
+       (absolutní zápis na disk). Tyto chyby se obvykle zpracovávají pomocí
+       chybového programu DOS v souboru COMMAND.COM, kterı diskovou operaci
+       znovu  spustí,  pak  dává  uivateli  monost, aby zrušil nebo znovu
+       spustil operaci nebo chybu ignoroval.
+
+       Jestlie  pøerušovací  program  bude  chyby  ošetøovat  místo aby se
+       vrátil  do DOSu (do funkce, která vyvolala obsluhu chyby), mìl by ze
+       zásobníku  obnovit  registry aplikaèního programu, odstranit všechna
+       slova  ze  zásobníku  kromì  posledních tøí (tj. návratová adresa do
+       aplikaèního  programu  a  registr  pøíznakù) a pak provést instrukci
+       IRET.  Tím  se  vrátí  do programu bezpostøednì za instrukci INT 21H
+       volající  funkci,  která zpùsobila chybu. Je nutno si uvìdomit, e v
+       takovém  pøípadì  bude DOS v nestabilním stavu dokud nebude vyvolána
+       funkce  vyšší  ne  0CH.  Bìnì je chyba indikována pøed návratem do
+       aplikaèního  programu  nastavením  chybového  kódu  do registru AX a
+       nastavením  pøíznaku  pøenosu  CF  na 1 jako indikace chyby (vìtšina
+       dobrıch programù tuto techniku pouívá).
+
+
+
+
+
+
+
+ I N T    2 5 H (INT 37; 0:0094H) - absolutní ètení z disku
+
+    vstup:    AL = èíslo diskové jednotky (0=A, 1=B, atd.)
+              DS:BX = adresa vyrovnávací pamìti (kam se provede ètení)
+              CX = poèet sektorù, které se mají èíst
+              DX = poèáteèní relativní sektor (od zaèátku disku)
+
+    vıstup:   AX = chybovı kód (je-li CF=1)
+              pøíznaky = DOS ponechá registr pøíznakù v zásobníku !
+
+    Pøerušení INT 25H zpùsobí naètení CX sektorù od sektoru DX z disku nebo
+logického  zaøízení  AL  do  vyrovnávací  pamìti na adresu DS:BX. Pøerušení
+pouívá  sluby  modulu  BIOS - ètení sektoru z disku. Logickı sektor disku
+zaèíná  zavádìcím  sektorem. U pevného disku je první logickı sektor prvním
+(zavádìcím)  sektorem  partie  disku,  není tedy fyzicky prvním sektorem na
+první stopì disku - hlavní zavádìcí záznam pevného disku není touto slubou
+vùbec  pøístupnı  (je  nutné  pouít  pøerušení INT 13H). Logické èíslování
+sektorù na disku se zvyšuje od èísla 0 po kadém sektoru na stopì, potom po
+kadé hlavì a nakonec po kadém válci na disku.
+
+    Chybové kódy navrácené v registru AH (pokud je CF nastaven na 1):
+ +--------------+-------------------------------------------------------+
+ | chybovı kód  |                      popis                            |
+ +--------------+-------------------------------------------------------+
+ |  01H (  1)   |       neplatnı povel                                  |
+ |  02H (  2)   |       adresová znaèka nenalezena                      |
+ |  03H (  3)   |       pokud o zápis na disk chránìnı proti zápisu     |
+ |  04H (  4)   |       sektor nenalezen                                |
+ |  05H (  5)   |       chyba funkce reset                              |
+ |  07H (  7)   |       chyba aktivity diskovıch parametrù              |
+ |  08H (  8)   |       pøeteèení DMA                                   |
+ |  09H (  9)   |       chyba pøekroèení okraje DMA                     |
+ |  10H ( 16)   |       chyba dat CRC nebo ECC                          |
+ |  11H ( 17)   |       moná chyba opravena pomocí ECC (AL = délka)    |
+ |  20H ( 32)   |       chyba øadièe                                    |
+ |  40H ( 64)   |       chybné vystavení                                |
+ |  80H (128)   |       time-out diskové mechaniky                      |
+ |  BBH (187)   |       nedefinovatelná chyba                           |
+ |  FFH (255)   |       chyba rozpoznání operace                        |
+ +--------------+-------------------------------------------------------+
+
+    Chybové kódy navrácené v registru AL:
+ +--------------+-------------------------------------------------------+
+ | chybovı kód  |                      popis                            |
+ +--------------+-------------------------------------------------------+
+ |  00H ( 0)    |       pokus o zápis na disk chránìnı proti zápisu     |
+ |  01H ( 1)    |       neznámé èíslo jednotky (diskové)                |
+ |  02H ( 2)    |       disková jednotka není pøipravena                |
+ |  03H ( 3)    |       neplatnı pøíkaz                                 |
+ |  04H ( 4)    |       chyba dat (chyba kontrolního souètu CRC)        |
+ |  05H ( 5)    |       špatná délka struktury poadavku                |
+ |  06H ( 6)    |       chyba pøi vystavení                             |
+ |  07H ( 7)    |       neznámı typ média                               |
+ |  08H ( 8)    |       sektor nenalezen                                |
+ |  09H ( 9)    |       v tiskárnì není papír                           |
+ |  0AH (10)    |       chyba pøi zápisu                                |
+ |  0BH (11)    |       chyba ètení                                     |
+ |  0CH (12)    |       všeobecná, nespecifikovatelná chyba             |
+ +--------------+-------------------------------------------------------+
+
+Varování: Pøi  vyvolání  pøerušení  INT  25H  ponechává  DOS  jedno slovo v
+          zásobníku  (obsahuje registr pøíznakù v èase vyvolání pøerušení).
+          Toto  slovo  musíte  vyjmout  instrukcí  POP,  aby byla zachována
+          hladina zásobníku.
+
+Pozn.: Pøerušení  INT  25H  zruší  obsahy všech registrù kromì segmentovıch
+       registrù.
+
+       DOS  èísluje sektory disku sekvenènì, poèínajíce válcem 0, hlavou 0,
+       sektorem  1.  Sluba  BIOS  (pøerušení INT 13H) identifikuje sektory
+       tøemi   oddìlenımi   souøadnicemi   -  válcem,  hlavou  a  sektorem.
+       Následující  formule  konvertuje  èíslování  sektorù BIOS do formátu
+       DOS:
+
+    èíslo_sektoru_DOS = (sektor_BIOS - 1) + hlava_BIOS * sektorù_na_stopu +
+                        válec_BIOS * sektorù_na_stopu * hlav_na_disk
+
+       DOS  pracuje  s  logickımi  disky,  zatímco  BIOS  pracuje  pouze  s
+       fyzickımi  disky.  To  znamená,  e  pøerušení  DOS INT 25H mùe bıt
+       pouito  ke  ètení  symbolického  disku  B, RAM disku nebo logického
+       disku, kterı byl namapován do fyzického disku pomocí povelu ASSIGN.
+
+       Chyby  vzniklé  bìhem pøerušení INT 25H nejsou obsloueny pøerušením
+       INT  24H  (obsluha  kritické  chyby).  Chyba  se indikuje nastavením
+       pøíznaku pøenosu CF na 1.
+
+       Není vhodné pøedpokládat, e sektor je exaktnì 512 bajtù. K zjištìní
+       skuteèné   velikosti   sektorù   by  mìla  bıt  pouita  funkce  1CH
+       (poskytnutí informací FAT) nebo 32H (poskytnutí informací FAT disku)
+       nebo èíst zavádìcí sektor disku.
+
+       Verze  DOS 3.4 a menší podporují maximální kapacitu pevného disku 32
+       MB  (32  767 KB). Je to dáno tím, e pro standardní disková zaøízení
+       se  pouívají  sektory  512  bajtù.  V registru DX lze jako parametr
+       funkce INT 25H zadat maximálnì 65ú535 sektorù, èím vzniká maximální
+       adresovatelnı  prostor  32  MB.  Verze DOS 3.50 a vyšší ji umoòují
+       adresovat vìtší prostor disku.
+
+       Avšak   ne-IBM  diskové  mechaniky  (nebo  novìjší  disky  IBM)  ji
+       podporují velikost sektorù vìtší ne 512 bajtù. Proto není prakticky
+       nijak omezena kapacita disku (jeho adresovatelnı prostor).
+
+       Chybovı  kód  navracenı v AH je stejnı jako kód navrácenı v registru
+       AH pøerušením INT 13H/sluba 02H a kód navrácenı v AL je stejnı jako
+       kód  nastavenı  v  registru  DI  pøi  vyvolání  kritické  chyby (viz
+       pøerušení INT 24H).
+
+
+
+
+
+
+ I N T    2 6 H (INT 38; 0:0098H) - absolutní zápis na disk
+
+    vstup:    AL = èíslo diskové jednotky (0=A, 1=B, atd.)
+              DS:BX = adresa vyrovnávací pamìti (odkud se provede zápis)
+              CX = poèet sektorù, které se mají zapsat
+              DX = poèáteèní relativní sektor (od zaèátku disku)
+
+    vıstup:   AX = chybovı kód (je-li CF=1)
+              pøíznaky = DOS ponechá registr pøíznakù v zásobníku !
+
+    Pøerušení  INT  26H  zpùsobí  zápis  CX sektorù z vyrovnávací pamìti na
+adrese  DS:BX  na  disk  nebo  na logické zaøízení od sektoru DX. Pøerušení
+pouívá sluby modulu BIOS - zápis sektoru na disku.
+
+    Popis pøerušení je analogickı popisu pøerušení INT 25H (absolutní ètení
+z disku) - viz popis pøerušení INT 25H.
+
+
+Pøíklad: Následující program kopíruje obsah jednostranné diskety o kapacitì
+         160K  (tj.  40  stop  po  8  sektorech  512 bajtù, celkem tedy 320
+         sektorù)  v diskové jednotce A: na disketu v diskové jednotce B: a
+         ovìøuje (verifikuje) zápis. Pouívá vyrovnávací pamì 32K:
+
+kopiruj: mov       dx,offset text           ; adresa úvodního hlášení
+         mov       ah,9                     ; sluba pro vıstup øetìzce
+         int       21h                      ; vıstup øetìzce na displej
+         mov       ah,8                     ; sluba vstupu znaku
+         int       21h                      ; èekání na znak z klávesnice
+         mov       ax,2e01h                 ; sluba zapnutí verifikace
+         int       21h                      ; zapnutí verifikace zápisu
+         mov       cx,5                     ; poèet sektorù 5 * 64 = 320
+kop:     push      cx                       ; uschování èítaèe cyklù
+         mov       al,0                     ; nastavení zdroje z disku A:
+         mov       bx,offset buffer         ; adresa bufferu k pøenosu dat
+         mov       cx,64                    ; poèet sektorù = 64 (= 8 stop)
+         mov       dx,[start]               ; poèáteèní sektor ke ètení
+         int       25h                      ; ètení 64 sektorù z disku A:
+         mov       al,1                     ; nastavení cílového disku B:
+         mov       bx,offset buffer         ; adresa bufferu k pøenosu dat
+         mov       cx,64                    ; poèet sektorù = 64 (= 8 stop)
+         mov       dx,[start]               ; poèáteèní sektor ke ètení
+         int       26h                      ; zápis 64 sektorù na disk B:
+         add       [start],64               ; zvıšení ukazatele sektorù
+         pop       cx                       ; návrat èítaèe skupin sektorù
+         loop      kop                      ; další skupina sektorù ke kop.
+         mov       ax,4c00H                 ; sluba ukonèení programu
+         int       21H                      ; ukonèení programu (kód = 0)
+
+text     db        'Vlote zdrojovou disketu do A: a cílovou do B:',13,10
+         db        'Stiskem libovolné klávesy zahájíte kopírování.',13,10
+         db        ' VAROVÁNÍ - diskety musí mít formát 160KB !',13,10,'$'
+
+start    dw        0
+buffer   db        64 DUP (512 DUP (?))     ; buffer 64 sektorù
+
+
+
+
+ I N T    2 7 H (INT 39; 0:009CH) - ukonèení s uchováním programu v pamìti
+
+    vstup:    CS:DX = první bajt následující po posledním bajtu programu
+
+    vıstup:   není návrat
+
+    Volání  pøerušení  INT  27H se pouívá k ukonèení programu, je-li nutno
+zachovat  program nebo jeho èást v pamìti poèítaèe. Typickım pøíkladem jsou
+rezidentní  programy  obsluhující  uivatelské  pøerušovací  rutiny,  napø.
+pøekódování  kláves  klávesnice  a  pod. Pøed vyvoláním pøerušením je nutno
+nastavit  registr  DX  na  offset  následujícího volného bajtu za posledním
+bajtem kódu programu, kterı má zùstat uchován v pamìti. Registr CS obsahuje
+adresu  segmentu  prefixu  programového  segmentu  PSP.  Funkce  neumoòuje
+navracet  chybovı  kód  ani  ponechávat  v  pamìti  vìtší programy ne 64K.
+Soubory  nejsou funkcí uzavøeny. Pøi provedení pøerušení INT 27H je program
+ukonèen, ale pracuje se s ním jako s rozšíøením DOSu; tzn., e není pøepsán
+jinımi programy.
+
+    Pøi  provedení  INT  27H se navrátí obsahy vektorù pøerušení INT 22H a
+INT  24H  z  existujícího  prefixu programového segmentu (PSP), proto nelze
+tuto  slubu  jednoduše  pouít  k  trvalé  instalaci  obslunıch  programù
+pøerušení INT 23H (obsluha uivatelského pøerušení Ctrl-Break) nebo INT 24H
+(obsluha kritické chyby).
+
+    Toto  pøerušení  zajišuje  kompatibilitu  verzí  DOSu  2.0 a vyšších s
+døívìjšími  verzemi.  Novì  vytváøené  programy by mìly pouívat funkci 31H
+(ukonèení procesu a jeho uchování v pamìti).
+
+
+
+
+
+ I N T    2 8 H (INT 40; 0:0080H) - èasování úsekù DOS
+
+    Toto  pøerušení není standardnì dokumentováno v pøíruèkách MS-DOS. Toto
+pøerušení  vyvolává  DOS vdy kdy èeká na stisk klávesy a pøedchází mnohım
+funkcím DOS menším nebo rovnım 0CH (tj. funkce znakovıch vstupù/vıstupù).
+
+    Tento vektor je obsluhován programem PRINT (standardní program DOS) aby
+nalezl správnı èasovı úsek ke ètení tištìného souboru a zápisu na tiskárnu.
+Je také èasto pouíváno mnoha rozliènımi rezidentními programy.
+
+    Typicky  pouívají  rezidentní  programy pøerušení INT 28H jako jeden z
+mnoha vstupních bodù do svého kódu. Tzn. e rezidentní program obslouí své
+funkce  èekání  na  klávesu  a/nebo  jiné  spouštìcí události a nastaví své
+pøíznaky. Po provedení své obsluhy pøerušení INT 28H zavolá pùvodní obsluhu
+pøerušení  INT  28H  a  pokud  jsou  poadované pøíznaky nastaveny, provede
+obsluhu svıch funkcí.
+
+Varování: Program  obsluhy  INT  28H  nesmí  pouívat funkce DOS menší nebo
+          rovny 0CH.
+
+
+
+
+
+
+ I N T    2 E H (INT 46; 0:00B8H) - provedení povelu DOS
+
+    vstup:    DS:SI = relativní  adresa  øetìzce  obsahujícího  povel DOS k
+                      provedení (musí bıt volná pamì k naètení programu)
+
+    vıstup:   není zøejmé, jak obdret statut operace
+
+    znièené registry: SS,SP
+
+    Toto  pøerušení  není standardnì dokumentováno pøíruèkami DOS. Slouí k
+vykonání povelu DOS, jakoby byl zadán z pøíkazového øádku.
+
+    Pøi  vstupu do pøerušení ukazuje DS:SI na øetìzec ASCII, kterı obsahuje
+jako  první  bajt  urèující  délku  øetìzce  (nepoèítá  se do délky øetìzce
+koncovı znak 0DH) a za ním následuje øetìzec textu pøíkazu. Napø.:
+
+    db   0fh, 'set PROMPT=$p$g',0dh         ; øetìzec je dlouhı 15 bajtù
+
+    Tento  pøíklad ilustruje hlavní pouití této sluby - je moné nastavit
+hodnotu  do  hlavního  (koøenného)  prostøedí  pomocí  povelu SET. Ve všech
+ostatních  pøípadech  se  dává  pøednost funkci DOS 4BH (naètení a start
+programu  -  napø. provedení povelu COMMAND.COM provádìjící pøikázovı øádek
+"/c povel_dos"), nebo tato funkce je plnì dokumentována.
+
+Pozn.: Pøed   vyvoláním  pøerušení  INT  2EH  nejdøíve  zajistìte  zmenšení
+       souèasného bloku pamìti pomocí funkce DOS 4AH.
+
+       Ponechte dostatek volného místa zásobníku - DOS jej dost spotøebuje.
+
+       Pøed  voláním  pøerušení ulote registry SS a SP a navrate je ihned
+       po návratu zpìt.
+
+       Tato  sluba  systému  je  utajovaná.  Zøejmì  není pouívána ádnım
+       programem  DOS  vèetnì  COMMAND.COM  a  není  proto  doporuèováno ji
+       pouívat.
+
+
+
+
+
+ I N T    2 F H (INT 47; 0:00BCH) - pøepínatelné pøerušení (DOS)
+
+
+    vstup:    AH = pøepínací èíslo
+                   01H - rezidentní èást povelu DOS 'PRINT'
+                   02H - rezidentní èást povelu DOS 'ASSIGN'
+                   10H - rezidentní èást povelu DOS 'SHARE'
+                   03H a 7FH - rezervováno pro DOS
+                   0B7H - rezidentní èást povelu DOS 'APPEN'D
+                   80H a 0FFH - moné pouít jinımi procesy
+              AL = funkce, která bude vykonána pøepínanou obsluhou
+
+    vıstup:   AX = chybovı kód (pokud je CF = 1)
+              AL = stav instalace (procesy DOS) (pokud je CF = 0)
+                   00H - není instalován, instalace probìhla v poøádku
+                   01H - není instalován, instalace neprobìhla v poøádku
+                   FFH - je ji nainstalován
+
+    Pøerušení   definuje   všeobecnı  styk  mezi  dvìma  procesy.  Aplikace
+pouívající  toto  pøerušení  musí definovat specifické funkce a parametry.
+Funkce,  které jsou standardnì definované v DOS jsou PRINT, ASSIGN, SHARE a
+APPEND.
+
+    Kadı proces, kterı pouívá toto pøerušení, musí pøi vyvolání pøerušení
+nejdøíve otestovat obsah registru AH (zda obsahuje pøepínací èíslo pro danı
+proces).  Pokud  proces  rozezná své èíslo, provede svou obsluhu pøerušení.
+Pokud  nerozezná  své èíslo, musí pøedat øízení na adresu pùvodního vektoru
+pøerušení  INT  2FH  (adresu pùvodního vektoru pøerušení si musí uloit pøi
+své instalaci døíve, ne nastaví svou adresu obsluhy pøerušení).
+
+    Pøepínatelnı ovladaè pøerušení se vztahuje ke svému "pøepínacímu èíslu"
+v registru AH. Volba pøepínacího èísla je pøidìlitelná; mùete pøidìlit své
+funkci èíslo mezi 80H a FFH; èísla 0 a 7FH jsou rezervována pro DOS.
+
+    Funkce,  která  bude  vykonána  pøepínatelnım  ovladaèem  pøerušení, je
+specifikována v registru AL. Ostatní registry mohou podle potøeby obsahovat
+libovolné další parametry.
+
+    Všechny  pøepínatelné  ovladaèe  pøerušení  musí  definovat  volání pro
+ALú=ú0 (poskytnutí stavu instalace). Hodnoty AL F8H a FFH jsou rezervovány
+pro DOS.
+
+    Pøepínatelné ovladaèe implementované nebo rezervované pro DOS:
+
+         AH = 01H (  1)  rezidentní èást PRINT
+              02H (  2)  rezidentní èást ASSIGN
+              10H ( 16)  rezidentní èást SHARE
+              B7H (183)  rezidentní èást APPEND
+
+    Všechny ostatní hodnoty od AH = 0 do AH = 7FH jsou rezervovány pro DOS.
+
+    Pøerušení  2FH  je  moné aplikovat pouze u DOS verze 3.1 a pozdìjší. U
+verze  DOS  3.0 bylo pøerušení definováno pouze pro obsluhu pøíkazu PRINT a
+hodnota  registru  AH  nemìla  ádnı vıznam. U døívìjších verzí ne DOS 3.0
+nebylo pøerušení definováno vùbec.
+
+    Pokud  instalujete  pomocí  tohoto  pøerušení  obslunı program pro své
+rezidentní programy napø. ve víceúlohovém systému, objevuje se zde problém:
+Pokud  urèíte pevnì pøepínací kód, riskujete monost, e toto èíslo pouívá
+ji  jinı  proces.  Proto sestavujte procesy s testováním, které zaruèí, e
+neztratíte  vládu  nad  procesy,  které  byly ji døíve nainstalovány.
+
+    Vaše procesy by mìly obsluhovat alespoò funkci AL=00H (poskytnutí stavu
+instalace), aby byla kontrola, zda je proces ji nainstalován.
+
+    Pokud vaše pøepínané procesy pouívají sluby DOS nebo jsou provozovány
+s  povolenım  pøerušením (IF = 1), mìlo by bıt moné do vašeho procesu opìt
+vstoupit.
+
+
+
+
+
+ I N T    2 F H / 0 1  ( A H = 1 ) - pøepínatelné pøerušení (PRINT)
+
+
+    vstup:    AH = 01H
+              AL = funkce, která bude vykonána pøepínanou obsluhou
+                 = 00H (0) - poskytnutí stavu instalace
+                   01H (1) - pøedloení souboru k tisku
+                   02H (2) - zrušení souboru z tiskové fronty
+                   03H (3) - zrušení všech souborù z tiskové fronty
+                   04H (4) - statut
+                   05H (5) - konec statutu
+                   0F8H a 0FFH - rezervováno pro DOS
+
+    vıstup:   AL = chybovı kód (kromì funkce 00H a 04H)
+                 = 01H ( 1) - neplatné èíslo funkce
+                   02H ( 2) - soubor nenalezen
+                   03H ( 3) - cesta nenalezena
+                   04H ( 4) - pøíliš mnoho otevøenıch souborù
+                   05H ( 5) - poadavek odmítnut
+                   06H ( 6) - neplatnı identifikátor souboru
+                   08H ( 8) - fronta plná
+                   09H ( 9) - zaneprázdnìn
+                   0CH (12) - jméno pøíliš dlouhé (vìtší ne 64 bajtù)
+                   0FH (15) - neplatnı disk
+
+
+
+Funkce 00H (0) - poskytnutí stavu instalace
+
+    vstup:    AH = 01H
+              AL = 00H
+
+    vıstup:   AL = 00H - neinstalován, instalace probìhla v poøádku
+                   01H - neinstalován, instalace neprobìhla v poøádku
+                   FFH - je ji nainstalován
+
+
+
+Funkce 01H (1) - pøedloení souboru k tisku
+
+    vstup:    AH = 01H
+              AL = 01H
+              DS:DX = ukazatel na pøedkládanı balík
+
+    vıstup:   AX = chybovı kód (viz vıše)
+
+    Pøedkládanı  balík musí obsahovat hodnotu "úrovnì" (jeden bajt; pro DOS
+    3.0,  3.1  a  3.3  musí  bıt  hodnota  úrovnì 0), následovanou adresou
+    øetìzce  ASCIIZ  (adresa  se  skládá z offsetu a segmentu) obsahujícího
+    disk,  cestu  a jméno souboru, kterı bude tištìn. Maskovací znaky * a ?
+    NEJSOU povoleny.
+
+
+
+Funkce 02H (2) - zrušení souboru z tiskové fronty
+
+    vstup:    AH = 01H
+              AL = 02H
+              DS:DX = ukazatel na øetìzec ASCIIZ specifikující rušenı soub.
+
+    vıstup:   AX = chybovı kód (viz vıše)
+
+    Zruší soubor z tiskové fronty. Maskovací znaky * a ? JSOU povoleny.
+
+
+
+Funkce 03H (3) - zrušení všech souborù z tiskové fronty (vyèištìní fronty)
+
+    vstup:    AH = 01H
+              AL = 03H
+
+    vıstup:   ádnı
+
+
+
+Funkce 04H (4) - zaèátek statutu (prohlédnutí fronty)
+
+    vstup:    AH = 01H
+              AL = 04H
+
+    vıstup:   DX = èítaè chyb
+              DS:SI = ukazatel na tiskovou frontu
+
+    Èítaè  chyb  hlásí poèet následnıch chyb vzniklıch pøi pokusech PRINT o
+    vıstup posledního znaku.
+
+    Tisková  fronta, na kterou ukazuje DS:SI, je sérií 64-bajtovıch poloek
+    specifikujících  soubory,  které  jsou  tištìny  (jako øetìzce ASCIIZ).
+    Soubor  tisknutı  v  souèasnosti  vystupuje jako první. Konec fronty je
+    indikován polokou zaèínající bajtem 00H (0).
+
+    Volání  funkce  statutu  zmrazí  soubory  ve  frontì (aby je bylo mono
+    prohlíet  a  pracovat  s  nimi). Zavolejte funkci pro ukonèení statutu
+    (AL=5) k uvolnìní tisknutıch souborù.
+
+
+
+Funkce 05H (5) - konec statutu (uvolnìní souborù k tisku)
+
+    vstup:    AH = 01H
+              AL = 05H
+
+    vıstup:   AX = chybovı kód (viz vıše)
+
+
+
+
+
+ I N T    2 F H / 0 2  ( A H = 2 ) - pøepínatelné pøerušení (ASSIGN)
+
+
+    vstup:    AH = 02H
+              AL = 00H (0) - poskytnutí stavu instalace
+
+    vıstup:   AL = 00H - neinstalován, instalace probìhla v poøádku
+                   01H - neinstalován, instalace neprobìhla v poøádku
+                   FFH - je ji nainstalován
+
+    Funkce poskytne informaci, zda je rezidentní èást ASSIGN instalována.
+
+
+
+
+
+ I N T    2 F H / 1 0  ( A H = 1 6 ) - pøepínatelné pøerušení (SHARE)
+
+
+    vstup:    AH = 10H
+              AL = 00H (0) - poskytnutí stavu instalace
+
+    vıstup:   AL = 00H - neinstalován, instalace probìhla v poøádku
+                   01H - neinstalován, instalace neprobìhla v poøádku
+                   FFH - je ji nainstalován
+
+    Funkce poskytne informaci, zda je rezidentní èást SHARE instalována.
+
+
+
+
+ I N T    2 F H / B 7  ( A H = 1 8 3 ) - pøepínatelné pøerušení (APPEND)
+
+
+    vstup:    AH = B7H
+              AL = 00H (0) - poskytnutí stavu instalace
+
+    vıstup:   AL = 00H - neinstalován, instalace probìhla v poøádku
+                   01H - neinstalován, instalace neprobìhla v poøádku
+                   FFH - je ji nainstalován
+
+    Funkce poskytne informaci, zda je rezidentní èást APPEND instalována.
+

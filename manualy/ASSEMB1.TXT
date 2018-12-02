@@ -1,0 +1,249 @@
+
+                    Základy programování v ASSEMBLERU IBM PC
+                    ----------------------------------------
+
+Obsah:
+         1.- instrukce procesoru 8086
+               1.1. Registry procesoru 8086/8088
+               1.2. Registr pøíznakù
+               1.3. Adresace pamìti, operandy
+               1.4. Aritmetické operace
+               1.5. Logické operace, rotace
+               1.6. Øetìzcové operace
+               1.7. Vìtvení programu
+               1.8. Pøesuny dat
+               1.9. Øídicí instrukce procesoru
+         2.- základní sluby BIOS
+         3.- základní sluby DOS
+         3.- rezidentní programy
+         4.-
+
+
+
+
+
+
+                       1.1. Registry procesoru 8086/8088
+                       ---------------------------------
+  +----> 15 ............... 0
+  |       7 ..... 0 7 ..... 0
++-+-----------^---------^---+
+| AX    =    AH    +   AL   | akumulátor          --+ hlavní registry
+| BX    =    BH    +   BL   | bázovı registr        |
+| CX    =    CH    +   CL   | èítací registr        |
+| DX    =    DH    +   DL   | datovı registr      --+
++---------------------------+
+|            SP             | ukazatel zásobníku  --+ ukazatele
+|            BP             | bázovı ukazatel     --+
++---------------------------+
+|            SI             | zdrojovı index      --+ indexy
+|            DI             | cílovı index        --+
++---------------------------+
+|            IP             | ukazatel instrukcí  --+ øízení programu
+|          FLAGS            | registr pøíznakù    --+
++---------------------------+
+|            CS             | kódovı segment      --+ segmentové registry
+|            DS             | datovı segment        |
+|            SS             | segment zásobníku     |
+|            ES             | zvláštní segment    --+
++---------------------------+
+
+                             1.2. Registr pøíznakù
+                             ---------------------
+
+ bit  0: CF pøenos ........ nastaví se pøi pøeteèení aritmetické operace
+
+ bit  2: PF parita ........ nastaví se pøi sudém poètu bitù 1 po aritm. operaci
+
+ bit  4: AF pomocnı pøenos  nastaví se pøi pøenosu z niší poloviny operandu
+
+ bit  6: ZF pøíznak nuly .. nastaví se, je-li vısledkem operace nula (shoda)
+
+ bit  7: SF znaménko ...... odpovídá nejvyššímu bitu vısledku (1=zápornı)
+
+ bit  8: TF krokování ..... pøi nastavení kadá instrukce vyvolá pøerušení INT3
+
+ bit  9: IF pøerušení ..... pøi nastavení je povoleno pøerušení (kromì NMI)
+
+ bit 10: DF smìr .......... pøi nastavení se ukazatele sniují, pøi 0 zvyšují
+
+ bit 11: OF pøeplnìní ..... nastaví se pøi pøeteèení operace se znaménkem
+
+
+
+
+
+                         1.3. Adresace pamìti, operandy
+                         ------------------------------
+Pamì  se  adresuje  pomocí  20 bitù - tj. lze adresovat 1 MB pamìti. Absolutní
+adresa vznikne souètem segmentového registru * 16 s offsetovım registrem:
+
+      segmentovı registr (napø. DS):  xxxx xxxx xxxx xxxx .... (16 bitù)
+      offset        (napø. SI + BX):  .... yyyy yyyy yyyy yyyy (16 bitù)
+                                      ------------------------
+      absolutní adresa                xxxx zzzz zzzz zzzz yyyy (20 bitù)
+
+- konstanta (èíslo 8 nebo 16 bitù)
+- registr Al,BL,CL,DL, AH,BH,CH,DH, AX,BX,CX,DX, SP,BP, SI,DI, CS,DS,SS,ES
+- index        [SI],    [SI+offset],    [SI+návìští],    implicitní segm. DS
+- index        [DI],    [DI+offset],    [DI+návìští],    implicitní segm. DS
+- báze         [BX],    [BX+offset],    [BX+návìští],    implicitní segm. DS
+- báze         [BP],    [BP+offset],    [BP+návìští],    implicitní segm. SS !
+- báze + index [BX+SI], [BX+SI+offset], [BX+SI+návìští], implicitní segm. DS
+- báze + index [BX+DI], [BX+SI+offset], [BX+SI+návìští], implicitní segm. DS
+- báze + index [BP+SI], [BP+SI+offset], [BP+SI+návìští], implicitní segm. SS !
+- báze + index [BP+DI], [BP+SI+offset], [BP+SI+návìští], implicitní segm. SS !
+- øetìzová instrukce     zdroj DS:SI,  pøíjemce ES:DI
+
+Varování: U  procesoru  80286  a  vyšší  se  nesmí  adresovat  slovo na pøelomu
+          segmentù (tj. nesmí bıt offset adresy slova = 0FFFFh) !
+
+                            1.4. Aritmetické operace
+                            ------------------------
+AAA      - ASCII korekce po souètu BCD (AH <- 1. èíslice, AL <- 2. èíslice)
+AAS      - ASCII korekce po odeèítání (AH <- 1. èíslice, AL <- 2. èíslice)
+DAA      - dekadická korekce po souètu (AL_H <- 1. èíslice, AL_L <- 2. èíslice)
+DAS      - dekadická korekce po odeèítání (AL_H <-1.èíslice, AL_L <-2.èíslice)
+
+AAD      - ASCII korekce pøed dìlením BCD (AL <- AH*10+AL, AH <- 0)
+AAM      - ASCII korekce po násobení BCD (AH <- AL/10, AL <- AL MOD 10)
+
+ADD      - aritmetickı souèet
+ADC      - aritmetickı souèet s pøiètením pøíznaku pøenosu CF
+SUB      - aritmetickı rozdíl
+SBB      - aritmetickı rozdíl s odeètením pøíznaku pøenosu CF
+
+INC      - inkrementace (zvıšení o 1) - pozor, neovlivní pøíznak CF !
+DEC      - dekrementace (sníení o 1) - pozor, neovlivní pøíznak CF !
+
+DIV      - dìlení bez znaménka (AX/op->AL,AH=zbytek) (DX:AX/op->AX,DX=zbytek)
+IDIV     - dìlení se znaménkem (AX/op->AL,AH=zbytek) (DX:AX/op->AX,DX=zbytek)
+MUL      - násobení bez znaménka (AL*op->AX) (AX*op->DX:AX) (neplatí pøíznaky!)
+IMUL     - násobení se znaménkem (AL*op->AX) (AX*op->DX:AX) (neplatí pøíznaky!)
+
+CMP      - porovnání dvou operandù (pøíznaky pøenosu jako pøi operaci SUB)
+
+                          1.5. Logické operace, rotace
+                          ----------------------------
+AND      - logické AND
+OR       - logické OR
+XOR      - logické XOR (pouívá se pro nulování registrù - XOR BX,BX)
+NEG      - negace operandu
+NOT      - logická inverze operandu
+TEST     - test operandu 1 operandem 2 (nastaví pøíznaky jako AND)
+
+
+První  operand  pro  rotace mùe bıt libovolnı kromì segmentù, druhı operand je
+èíslo 1 nebo registr CL a udává poèet rotací.
+
+RCL      - rotace vlevo, pøes pøíznak CF (mìní jen pøíznaky OF a CF)
+RCR      - rotace vpravo pøes pøíznak CF (mìní jen pøíznaky OF a CF)
+ROL      - rotace vlevo, kopie bitu 7 do pøíznaku CF (mìní jen pøízn. OF a CF)
+ROR      - rotace vpravo, kopie bitu 7 do pøíznaku CF (mìní jen pøízn. OF a CF)
+SAL      - aritm. posun vlevo, CF <- bit 7, bit 0 <- 0 (nastaví pøíznaky)
+SAR      - aritm. posun vpravo, SF -> bit 7, bit 0 -> CF (nastaví pøíznaky)
+SHL      - logickı posun vlevo, CF <- bit 7, bit 0 <- 0 (nastaví pøíznaky)
+SHR      - logickı posun vpravo, 0 -> bit 7, bit 0 -> CF (nastaví pøíznaky)
+
+
+
+
+                             1.6. Øetìzcové operace
+                             ----------------------
+Po  provedení  kadé  øetìzcové  instrukce  se ukazatele posunou podle pøíznaku
+smìru  DF  nahoru  nebo  dolù.  Pøi  pouití prefixu REP se øetìzcová instrukce
+opakuje CX krát (po provedení je v CX 0). Je-li CX=0, neprovede se ani jednou).
+Prefix REPE se po provedení jednoho kroku opakuje pouze v pøípadì shody operace
+porovnání  (pouití  pøi porovnání øetìzcù na shodu). Pøi pouití prefixu REPNE
+se operace opakuje jen pøi neshodì (pouití pøi vyhledání znaku v øetìzci).
+
+CMPSB    - porovnání øetìzcù s velikostí bajt (vıznam  CMP DS:[SI],ES:[DI])
+CMPSW    - porovnání øetìzcù s velikostí slovo (vıznam  CMP DS:[SI],ES:[DI])
+LODSB    - naètení bajtu AL z øetìzce DS:SI (vıznam MOV AL,DS:[SI])
+LODSW    - naètení slova AX z øetìzce DS:SI (vıznam MOV AX,DS:[SI])
+MOVSB    - pøesun bajtu z adresy DS:SI do adresy ES:DI
+MOVSW    - pøesun slova z adresy DS:SI do adresy ES:DI
+SCASB    - porovnání AL s øetìzcem ES:DI (vıznam CMP AL,ES:[DI])
+SCASW    - porovnání AX s øetìzcem ES:DI (vıznam CMP AX,ES:[DI])
+STOSB    - uloení AL do adresy ES:DI (vıznam MOV ES:[DI],AL)
+STOSW    - uloení AX do adresy ES:DI (vıznam MOV ES:[DI],AX)
+
+
+
+
+
+
+                             1.7. Vìtvení programu
+                             ---------------------
+CALL     - vyvolání podprogramu (NEAR - uloí se IP, FAR - uloí se CS a IP)
+RET      - návrat z podprogramu (NEAR - návrat IP, FAR - návrat IP a CS)
+INT      - vyvolání pøerušení èíslo 0 a 255 (uloí se FLAGS, CS a IP)
+INTO     - vyvolání pøerušení INT 4 v pøípadì, e je pøíznak pøeteèení OF
+IRET     - návrat z obsluhy pøerušení (navrátí IP, CS a FLAGS)
+JMP      - nepodmínìnı skok (typ SHORT, NEAR nebo FAR)
+JA,JNBE  - skok, je-li nad = není pod ani shoda (je CF=0 a ZF=0)
+JAE,JNB,JNC - skok, je-li nad nebo shoda = není pod = není pøenos CF (je CF=0)
+JB,JNAE,JC  - skok, je-li pod = není nad ani shoda = je pøenos CF (je CF=1)
+JBE,JNA  - skok, je-li pod nebo shoda = není nad (je CF=1 nebo CF=1)
+JE,JZ    - skok, je-li shoda = je nula (je ZF=1)
+JNE,JNZ  - skok, není-li shoda = není nula (je ZF=0)
+JG,JNLE  - skok, je-li vìtší = není menší ani shoda (je ZF=0 a SF=OF)
+JGE,JNL  - skok, je-li vìtší nebo shoda = není menší (je SF=OF)
+JL,JNGE  - skok, je-li menší = není vìtší ani shoda (je SF<>OF)
+JLE,JNG  - skok, je-li menší nebo shoda = není vìtší (je SF<>OF nebo ZF=1)
+JO       - skok, je-li pøeteèení (je OF=1)
+JNO      - skok, není-li pøeteèení (je OF=0)
+JP,JPE   - skok, je-li parita = parita je sudá (PF=1)
+JNP,JPO  - skok, není-li parita = parita je lichá (PF=0)
+JS       - skok, je-li znaménko = je záporné (SF=1)
+JNS      - skok, není-li znaménko = je kladné (SF=0)
+JCXZ     - skok, je-li registr CX=0 (neovlivní pøíznaky)
+LOOP     - sníení CX o 1 a skok, je-li CX<>0
+LOOPE,LOOPZ - sníení CX o 1 a skok, je-li CX<>0 a zároveò je shoda/nula
+LOOPNE,LOOPNZ - sníení CX o 1 a skok, je-li CX<>0 a zároveò není shoda/nula
+
+
+
+                                1.8. Pøesuny dat
+                                ----------------
+MOV      - pøesun obsahu operandu 2 do operandu 1
+LEA      - naplnìní efektivní adresou (napø. LEA AX,[BP+offset])
+LDS      - naplnìní registru i segmentu DS dvojslovem (napø. LDS SI,[ukazatel])
+LES      - naplnìní registru i segmentu ES dvojslovem (napø. LES DI,[ukazatel])
+LAHF     - naplnìní registru AH obsahem pøíznak. registru FLAGS - LOW
+SAHF     - uloení registru AH do pøíznak. registru FLAGS - LOW
+PUSH     - uloení slova do zásobníku (registr nebo adresa)
+POP      - návrat slova ze zásobníku (registr nebo adresa, nesmí bıt CS)
+PUSHF    - uloení registru pøíznakù do zásobníku
+POPF     - návrat registru pøíznakù ze zásobníku
+XCHG     - zámìna dat
+XLAT     - tabulkovı pøevod (vıznam MOV AL,DS:[BX+AL])
+
+
+
+
+
+                        1.9. Øídicí instrukce procesoru
+                        -------------------------------
+CBW      - konverze bajtu v AL na slovo v AX (s dodrením znaménka)
+CWD      - konverze slova v AX na dvojslovo DX:AX (s dodrením znaménka)
+
+CLC      - nulování pøíznaku pøenosu CF
+CMC      - doplnìk pøíznaku pøenosu CF (inverze)
+STC      - nastavení pøíznaku pøenosu CF
+
+CLD      - nulování pøíznaku smìru DF (bude smìr nahoru)
+STD      - nastavení pøíznaku smìru DF (bude smìr dolù)
+
+CLI      - nulování pøíznaku pøerušení (pøerušení bude zakázáno)
+STI      - nastavení pøíznaku pøerušení (pøerušení bude povoleno)
+
+IN       - vstup z portu (povoleno IN AL,DX; IN AX,DX; IN AL,[n8]; IN AX,[n8])
+OUT      - vıstup na port (OUT DX,AL; OUT DX,AX; OUT [n8],AL; OUT [n8],AX)
+
+ESC      - pøedání øízení koprocesoru
+HLT,HALT - zastavení procesoru (pokraèování po pøerušení)
+LOCK     - uzamèení sbìrnice pro následující instrukci (proti pøerušení a DMA)
+NOP      - prázdná instrukce, nic se neprovede (jednobajtovı kód 90h)
+WAIT     - èekání (je-li vstup procesoru TEST aktivní)
+

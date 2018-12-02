@@ -1,0 +1,1199 @@
+
++-------------------------------------------------------------------------+
+|                                                                         |
+|                                                                         |
+|                              Videokarty                                 |
+|                                                                         |
+|                                                                         |
++-------------------------------------------------------------------------+
+
+                            Grafické módy videokaret
+                            ------------------------
++---+---------+------+-------+-----+-------+------+---+----+---+---+
+|Mód|Text/Graf|Horiz.|Vertik.|Barev| Pamì |Adresa|CGA|Herc|EGA|VGA|
++---+---------+------+-------+-----+-------+------+---+----+---+---+
+|0,1|  Text   |  40  |  25   |  16 |  2 KB | B800 | X | -  | X | X |
+|2,3|  Text   |  80  |  25   |  16 |  4 KB | B800 | X | -  | X | X |
+|4,5|  Graf   | 320  | 200   |   4 | 16 KB | B800 | X | -  | X | X |
+| 6 |  Graf   | 640  | 200   |   2 | 16 KB | B800 | X | -  | X | X |
+| 7 |  Text   |  80  |  25   |   2 |  4 KB | B000 | - | X  | X | X |
+|13 |  Graf   | 320  | 200   |  16 | 32 KB | A000 | - | -  | X | X |
+|14 |  Graf   | 640  | 200   |  16 | 64 KB | A000 | - | -  | X | X |
+|15 |  Graf   | 640  | 350   |   2 | 28 KB | A000 | - | -  | X | X |
+|16 |  Graf   | 640  | 350   |  16 |112 KB | A000 | - | -  | X | X |
+|17 |  Graf   | 640  | 480   |   2 | 38 KB | A000 | - | -  | - | X |
+|18 |  Graf   | 640  | 480   |  16 |153 KB | A000 | - | -  | - | X |
+|19 |  Graf   | 320  | 200   | 256 | 64 KB | A000 | - | -  | - | X |
++---+---------+------+-------+-----+-------+------+---+----+---+---+
+
+
+
+
+
+CGA:       320 horiz. x 200 vert. / 4 barvy (16 KB pamìti)
+           640 horiz. x 200 vert. / 2 barvy (16 KB pamìti)
+
+Hercules:  720 horiz. x 348 vert. / 2 barvy (32 KB pamìti)
+
+EGA:       320 horiz. x 200 vert. / 16 barev (
+           640 horiz. x 200 vert. / 16 barev
+           640 horiz. x 350 vert. / 16 barev
+           ........ a všechny módy CGA
+
+VGA:       640 horiz. x 480 vert. / 16 barev
+           320 horiz. x 200 vert. / 256 barev (64 KB pamìti)
+           ........ a všechny módy EGA
+
+
+
+
+                       CGA (Color-Graphics Adapter)
+
+Frekvence 7 MHz pro niší rozlišení, 14 MHz pro vyšší rozlišení. Grafickı
+adaptér  CGA  je  zaloen na obvodu Motorola MC6845. Umoòuje rozlišení v
+textovém  videomódu  80 nebo 40 znakù krát 25 øádkù, v grafickém módu 640
+nebo  320  bodù horizontálnì krát 200 bodù vertikálnì. Snímková frekvence
+je  50  Hz,  øádková  frekvence  je  18.4 kHz. Znaky v textovém reimu se
+zobrazují v matici 8x8 bodù.
+
+Videopamì grafické karty CGA je adresována od adresy A000h.
+
+V grafickém módu s vyšším rozlišením reprezentuje kadı bajt osmici bodù.
+V  módu  s niším rozlišením reprezentuje kadá dvojice bitù jeden bod na
+obrazovce (tj. 4 barvy).
+
+3D4h - indexovı registr (zápis - zapíše se èíslo øídicího registru CRT)
+3D5h - datovı registr (èíslo registru se nastaví portem 3D4h)
+
++-----+-------------------------------------------------------------------+
+| reg.|                        vıznam                                     |
++-----+-------------------------------------------------------------------+
+| 00H | celková délka horizontálního øádku (ve znacích - vèetnì SYNCHRO)  |
+| 01H | poèet zobrazenıch znakù na øádek                                  |
+| 02H | poèátek horizontálního zatemnìní (poèet znakù)                    |
+| 03H | šíøka horizontálního zatemnìní                                    |
+| 04H | poèátek horizontálního zpìtného bìhu (znaková pozice)             |
+| 05H | šíøka horizontálního zpìtného bìhu (bity 0-4:šíøka horizontálního |
+|     |    zpìtného bìhu; bity 5-6:prodleva zpìtného bìhu 0-3 znakovıch   |
+|     |    taktù; bit 7: 1=poèáteèní plocha na liché adrese; 0=sudé       |
+| 06H | poèet zobrazenıch vertikálních linek celkem                       |
+| 07H | bit 8 pro jisté registry CRT (jejich adresy se udávají 9-bitovì):|
+|     |       +-+-+-+-+-+-+-+-+                                           |
+|     |       |7 6 5 4 3 2 1 0|                                           |
+|     |       +++++++++++++++++ bit                                       |
+|     |            | | | | | +-> 0: vertikálních linek celkem (CRTC reg.6)|
+|     |            | | | | +---> 1: konec vertikál. zobraz. (CRTC reg.12H)|
+|     |            | | | +-----> 2: zaèát. vertik. zpìtného bìhu (reg.10H)|
+|     |            | | +-------> 3: zaèátek vertik. zatemnìní (reg. 15H)  |
+|     |            | +---------> 4: porovnání øádky (reg.18H)             |
+|     |            +-----------> 5: pozice kurzoru (reg.0AH)              |
+| 08H | pøednastavení první linky øádku po vertikálním zpìtném bìhu       |
+| 09H | adresa maximální pomocné linky (poèet linek na znak)              |
+| 0AH | poèáteèní linka kurzoru                                           |
+| 0BH | koneèná linka kurzoru                                             |
+| 0CH | poèáteèní adresa videopamìti-zaèátek zobraz. stránky (vyšší bajt) |
+| 0DH |               -  "  -   (niší bajt)                              |
+| 0EH | adresa kurzoru (vyšší bajt)                                       |
+| 0FH | adresa kurzoru (niší bajt)                                       |
+| 10H | zápis:zaèátek vertikálního zpìtného bìhu                          |
+| 11H | zápis:konec vertikálního zpìtného bìhu (bity 0-3: šíøka zpìtného  |
+|     |       bìhu v linkách; bit 4: 0=nulování vertik.pøerušení;         |
+|     |       bit 5: 0=moné vertikální pøerušení IRQ 2                   |
+| 12H | konec zobrazení ve vertikálním smìru (linka)                      |
+| 13H | vystøedìní obrazu ve vertikálním zmìru                            |
+| 14H | poloha podtrení (bity 0-5 jsou èísla linek)                      |
+| 15H | zaèátek vertikálního zatemnìní (linek)                            |
+| 16H | konec vertikálního zatemnìní (linek)                              |
++-----+-------------------------------------------------------------------+
+
+3D8h - øídicí registr módu (pouze zápis)
+             bit 0: 0=textovı mód 40x25, 1=textovı mód 80x25
+             bit 1: 1=grafickı mód 320x200, 0=textovı mód
+             bit 2: 1=èernobílı mód, 0=barevnı mód
+             bit 3: 1=povoleno zobrazení, 0=blokování videosignálu
+             bit 4: 1=grafickı mód 640x200
+             bit 5: 1=blikání znakù, 0=zvıšenı jas pozadí
+
+3D9h - registr volby barvy
+          Textovı mód          bit 0: 1=modrá sloka okolí
+                               bit 1: 1=zelená sloka okolí
+                               bit 2: 1=èervená sloka okolí
+                               bit 3: 1=jasová sloka okolí
+                               bit 4: 1=barvy pozadí
+                               bit 5: ádná funkce
+          Grafickı mód 320x200 bit 0: 1=modrá sloka pozadí
+                               bit 1: 1=zelená sloka pozadí
+                               bit 2: 1=èervená sloka pozadí
+                               bit 3: 1=jasová sloka pozadí
+                               bit 4: 1=alternat. zintenzívnìní barev
+                               bit 5: vıbìr palet
+          Grafickı mód 640x200 bit 0: 1=modrá sloka pozadí
+                               bit 1: 1=zelená sloka pozadí
+                               bit 2: 1=èervená sloka pozadí
+                               bit 3: 1=jasová sloka pozadí
+
+3DAh - stavovı registr monitoru (ètení):
+             bit 0: 1=probíhá horizontální synchronizace (je pøístupná
+                      videopamì)
+             bit 1: 1=objevila se hrana svìtelného pera (tento bit
+                      lze nulovat libovolnım zápisem na port 3DBh)
+             bit 2: 1=spínaè svìtelného pera vypnut, 0=spínaè zapnut
+             bit 3: 1=probíhá vertikální spìtnı bìh
+
+3DBh - nulování registru svìtelného pera - libovolnı zápis na port
+       (bit 1 stavového portu 3DAh)
+
+3DCh - nastavení registru svìtelného pera
+
+ Konektor CGA (pohled na zadní panel videokarty)
++------------------------------------------+
+|               +----\                     |
+| zem video     |1 o   \                   |
+|               |    o 6| intenzita        |
+| zem synchron. |2 o    |                  |
+|               |    o 7|                  |
+| èervená sloka|3 o    |                  |
+|               |    o 8| horizontální SYN |
+| zelená sloka |4 o    |                  |
+|               |    o 9|  vertikální SYN  |
+| modrá sloka  |5 o   /                   |
+|               +----/                     |
++------------------------------------------+
+
+Konektor modulátoru CGA RF
+ 1  +12 V
+ 3  sloené video
+ 4  logická zem
+
+Konektor svìtelného pera:
+   +----+
+   | o 1|  signál svìtelného pera
+   |   2|
+   | o 3|  spínaè svìtelného pera
+   | o 4|  zem
+   | o 5|  +5 V
+   | o 6|  +12 V
+   +----+
+
+                                 HERCULES
+
+Grafickı  adaptér Hercules je zaloen na obvodu Motorola MC6845. Umoòuje
+rozlišení  v  textovém videomódu 80 znakù krát 25 øádkù, v grafickém módu
+720  bodù horizontálnì krát 348 bodù vertikálnì. Snímková frekvence je 50
+Hz, øádková frekvence je 18.4 kHz. Znaky v textovém reimu se zobrazují v
+matici 9x14 bodù (9. bod na lince je pouit jako meziznaková mezera).
+
+Videopamì grafické karty Hercules je adresována od adresy B000h.
+
+Atributy:     bit 7: 1=blikání nebo intenzivní pozadí
+                     0=nebliká nebo pozadí s normální intenzitou
+              bit 3: 1=intenzivní popøedí, 0=normální popøedí
+              +---------------------+---------------+
+              | bit 7 6 5 4 3 2 1 0 |               |
+              +---------------------+---------------+
+              |     X 0 0 0 X 0 0 0 | mezera        |
+              |     X 0 0 0 X 0 0 1 | podtreno     |
+              |     X 0 0 0 X 1 1 1 | normální znak |
+              |     X 1 1 1 X 0 0 0 | inverzní znak |
+              +---------------------+---------------+
+
+Registry  Hercules  jsou adresovány na adresách 3b0h a 3BFh (adresy 3BCh
+a  3BFh  jsou  pouity  pro  paralelní  port  tiskány  umístìnı na desce
+Hercules).
+
+3B4h - indexovı registr (zápis - zapíše se èíslo øídicího registru CRT)
+3B5h - datovı registr (èíslo registru se nastaví portem 3B4h)
+
++-----+-------------------------------------------------------------------+
+| reg.|                        vıznam                                     |
++-----+-------------------------------------------------------------------+
+| 00H | celková délka horizontálního øádku (ve znacích - vèetnì SYNCHRO)  |
+| 01H | poèet zobrazenıch znakù na øádek                                  |
+| 02H | poèátek horizontálního zatemnìní (poèet znakù)                    |
+| 03H | šíøka horizontálního zatemnìní                                    |
+| 04H | poèátek horizontálního zpìtného bìhu (znaková pozice)             |
+| 05H | šíøka horizontálního zpìtného bìhu (bity 0-4:šíøka horizontálního |
+|     |    zpìtného bìhu; bity 5-6:prodleva zpìtného bìhu 0-3 znakovıch   |
+|     |    taktù; bit 7: 1=poèáteèní plocha na liché adrese; 0=sudé       |
+| 06H | poèet zobrazenıch vertikálních linek celkem                       |
+| 07H | bit 8 pro jisté registry CRT (jejich adresy se udávají 9-bitovì):|
+|     |       +-+-+-+-+-+-+-+-+                                           |
+|     |       |7 6 5 4 3 2 1 0|                                           |
+|     |       +++++++++++++++++ bit                                       |
+|     |            | | | | | +-> 0: vertikálních linek celkem (CRTC reg.6)|
+|     |            | | | | +---> 1: konec vertikál. zobraz. (CRTC reg.12H)|
+|     |            | | | +-----> 2: zaèát. vertik. zpìtného bìhu (reg.10H)|
+|     |            | | +-------> 3: zaèátek vertik. zatemnìní (reg. 15H)  |
+|     |            | +---------> 4: porovnání øádky (reg.18H)             |
+|     |            +-----------> 5: pozice kurzoru (reg.0AH)              |
+| 08H | pøednastavení první linky øádku po vertikálním zpìtném bìhu       |
+| 09H | adresa maximální pomocné linky (poèet linek na znak)              |
+| 0AH | poèáteèní linka kurzoru                                           |
+| 0BH | koneèná linka kurzoru                                             |
+| 0CH | poèáteèní adresa videopamìti-zaèátek zobraz. stránky (vyšší bajt) |
+| 0DH |               -  "  -   (niší bajt)                              |
+| 0EH | adresa kurzoru (vyšší bajt)                                       |
+| 0FH | adresa kurzoru (niší bajt)                                       |
+| 10H | zápis:zaèátek vertikálního zpìtného bìhu                          |
+| 11H | zápis:konec vertikálního zpìtného bìhu (bity 0-3: šíøka zpìtného  |
+|     |       bìhu v linkách; bit 4: 0=nulování vertik.pøerušení;         |
+|     |       bit 5: 0=moné vertikální pøerušení IRQ 2                   |
+| 12H | konec zobrazení ve vertikálním smìru (linka)                      |
+| 13H | vystøedìní obrazu ve vertikálním zmìru                            |
+| 14H | poloha podtrení (bity 0-5 jsou èísla linek)                      |
+| 15H | zaèátek vertikálního zatemnìní (linek)                            |
+| 16H | konec vertikálního zatemnìní (linek)                              |
++-----+-------------------------------------------------------------------+
+
+3B8h - grafickı øídicí registr (pouze zápis)
+             bit 0: 1=uvolnìní øadièe
+             bit 1: 1=grafickı mód, 0=textovı mód
+             bit 3: 1=povoleno zobrazení
+             bit 5: 1=blikání znakù, 0=zvıšenı jas pozadí
+
+3BAh - stavovı registr monitoru (ètení):
+             bit 0: 1=probíhá horizontální synchronizace
+
+ Konektor Hercules (pohled na zadní panel videokarty)
++------------------------------------------+
+|          monochromat. monitor            |
++------------------------------------------+
+|               +----\                     |
+| zem video     |1 o   \                   |
+|               |    o 6| intenzita        |
+| zem synchron. |2 o    |                  |
+|               |    o 7|  video           |
+|               |3 o    |                  |
+|               |    o 8| horizontální SYN |
+|               |4 o    |                  |
+|               |    o 9|  vertikální SYN  |
+|               |5 o   /                   |
+|               +----/                     |
++------------------------------------------+
+
+
+                     MCGA (Multicolor Graphics Array)
+
+MCGA  je  rozšíøením  funkcí  displeje  CGA.  Øídicí  registry  MCGA jsou
+identické 16 niším øídicím registrùm CGA (èasování videosignálu), jejich
+funkce  je  však mírnì odlišná. Z tohoto dùvodu je pouíván ochrannı bit,
+kterı chrání prvních 7 øídicích registrù øadièe proti zápisu (stejnì jako
+u karty VGA). Karta MCGA umoòuje mnoho doplòujících funkcí jako grafická
+karta  VGA - downloadování znakù, doplòující videomódy (640x480/16 barev,
+320x200/256 barev, kadá barva mùe bıt definována 18 bity palet - 6 bitù
+pro modrou barvu, 6 pro zelenou a 6 pro èervenou).
+
+
+                    PGA (Profesional Graphics Adapter)
+
+Karta  PGA  je  vyšším vıvojovım stupnìm grafické karty EGA. PGA umoòuje
+grafické  rozlišení 640x480 bodù a 256 barev. Základem grafické karty PGA
+je  videoøadiè  6845  s  procesorem  8088  na  jedné  desce.  To umoòuje
+provádìní   vysokoúrovòovıch   grafickıch   funkcí  (3-rozmìrná  grafika,
+modelování).  Kadá  z 256 barev mùe bıt definována 12-bitovım èíslem (4
+bity  pro modrou barvu, 4 pro èervenou a 4 pro zelenou). Na rozdíl od EGA
+karta PGA neumoòuje downloadování znakù.
+
+
+                                  8514/A
+
+Karta  8514/A  byla  urèena do poèítaèù PS/2 jako rozšiøující karta k VGA
+pøes  Mikro  kanál.  Umoòuje  rozlišení 1024x768 bodù a 4 nebo 8 bitù na
+barvu.
+
+
+
+                                  +---------+
+                                  | EGA/VGA |
+                                  +---------+
+
+                             Zápisové a ètecí módy
+                             ---------------------
+
+Zápisovı mód 0
+--------------
+Program  mùe  zapisovat  pøímo do videopamìti pøes 8-bitovou datovou sbìrnici.
+Zapisovanı  bajt  mùe  bıt  pøed zápisem rotován a maskován. Operace maskování
+vyaduje  sekvenci operací ètení/modifikace/zápis (øadiè ète nejdøíve všechny 4
+barevné  roviny,  provede operaci maskování mezi pùvodními a novımi daty a opìt
+zapíše všechny 4 roviny).
+
+Se  zapisovanımi  daty  mohou bıt provádìny logické operace AND, OR a XOR (opìt
+vyaduje sekvenci operací ètení/modifikace/zápis).
+
+Data  mohou bıt zapisována do více barevnıch rovin souèasnì (max. 4) s pouitím
+registrù pro nastavení/nulování bitù a to jedinou instrukcí pøesunu MOV.
+
+
+Zápisovı mód 1
+--------------
+Všechny  4  roviny mohou bıt modifikovány interním 32-bitovım registrem jedinou
+instrukcí  pøesunu  MOV.  Tento  videomód  umoòuje velmi rychlé pøesuny uvnitø
+videopamìti.  Data  mohou  bıt snadno pøesouvána mezi aktivní a neaktivní èástí
+videopamìti.
+
+
+Zápisovı mód 2
+--------------
+Všechny  4  barevné  roviny  mohou  bıt  modifikovány ètyømi datovımi bity. Pøi
+zápisu  zaplní  bit  0  zapisovaného bajtu 8 bitù roviny 0, bit 1 zaplní 8 bitù
+roviny  1  atd.  Tato  procedura  je pouívána ve spolupráci s registrem bitové
+masky  k modifikaci vybranıch bitù bez nutnosti provádìt rotaci bajtu. Mùe bıt
+efektivní té k zápisu bloku 8 stejnıch hodnot na displej.
+
+
+Zápisovı mód 3
+--------------
+Tento  zápisovı  mód  je  monı  pouze  pro  karty VGA. Data jsou zapisována do
+videopamìti z registru pro nastavení/nulování. Kadı bit registru (bity 0 a 3)
+je  zapisován  8x  do  barevnıch  rovin  0 a 3. Tyto bity jsou zapisovány pøes
+bitovou  masku.  Bitová  maska  je  logickım AND zapisovaného bajtu po rotaci a
+hodnotou  v  registru bitové masky. Tento mód je vhodnı pro zápis dat pro vıplò
+do všech 4 barevnıch rovin, pokud mají všechny body stejnou barvu.
+
+
+Ètecí mód 0
+-----------
+Ètecí  mód  0  ète  bajt dat pøímo z videopamìti. Mùe bıt ètena najednou pouze
+jedna barevná rovina.
+
+
+Ètecí mód 1
+-----------
+Ètecí  mód  1  navrací vısledek porovnání. Do registru porovnání barev mùe bıt
+uloena 4-bitová hodnota udávající barvu. Ètenı bajt obsahuje nastavené bity na
+1 pouze na pozicích poadované barvy, ostatní bity jsou vynulované.
+
+
+                                  Konektor EGA
+                                  ------------
+                       (pohled na zadní panel videokarty)
+
++---------------------+-------------------------+-----------------------------+
+|monochromat. monitor |  RGBI barevnı monitor   |      ENHANCED monitor       |
++---------------------+-------------------------+-----------------------------+
+|   +----\            |       +----\            |           +----\            |
+|zem|1 o   \          |  zem  |1 o   \          |     zem   |1 o   \          |
+|   |    o 6|intenzita|       |    o 6|intenzita|           |    o 6|sk.zelená|
+|   |2 o    |         |       |2 o    |         |sek.èervená|2 o    |         |
+|   |    o 7|video    |       |    o 7|         |   (/zem)  |    o 7|sek.modrá|
+|   |3 o    |         |èervená|3 o    |         | prim.èerv.|3 o    |         |
+|   |    o 8|horiz.SYN|       |    o 8|horiz.SYN|           |    o 8|horiz.SYN|
+|   |4 o    |         | zelená|4 o    |         |prim.zelená|4 o    |         |
+|   |    o 9|vert.SYN |       |    o 9|vert.SYN |           |    o 9|vert. SYN|
+|   |5 o   /          | modrá |5 o   /          |prim.modrá |5 o   /          |
+|   +----/            |       +----/            |           +----/            |
++---------------------+-------------------------+-----------------------------+
+
+Konektor svìtelného pera:
+   +----+
+   | o 1|  signál svìtelného pera
+   |   2|
+   | o 3|  Spínaè svìtelného pera
+   | o 4|  zem
+   | o 5|  +5 V
+   | o 6|  +12 V
+   +----+
+
+                            EGA rozšiøující konektor
+
+                              +--------+
+            zem             1 | o    o |  2           -12 V
+           +12 V            3 | o    o |  4    J1 rozšírující Jack 1
+   J2 rozšírující Jack 2    5 | o    o |  6     vıstup sek. zelená
+   vıstup sek. èervená      7 | o    o |  8     vıstup sek. modrá
+      zmìna atributu        9 | o    o | 10        vıstup modrá
+       vıstup zelená       11 | o    o | 12        vstup zelená
+       sek. èervená        13 | o    o | 14        vstup modrá
+       vstup èervená       15 | o    o | 16       vıstup èervená
+vstup FEAT1 (registr #0)   17 | o    o | 18   sloené horiz. a vertik. zatemnìní
+vstup FEAT0 (registr #0)   19 | o    o | 20   vıstup FC1 (rozšiøující registr)
+vıstup FC1 (rozšiø. reg.)  21 | o    o | 22      sek. zelená/intenzita
+    sek. modrá/video       23 | o    o | 24   vstup horizontální synchonizace
+ vstup vertik. synchron.   25 | o    o | 26       vıstup hodin 14 MHz
+blokování vnitøního øadièe 27 | o    o | 28   vıstup externích hodin bodù
+  vıstup vertik. synchro.  29 | o    o | 30     vıstup horizont. synchro.
+           zem             31 | o    o | 32             +5 V
+                              +--------+
+
+--------------------------- øídicí registry atributù ---------------------------
+
+03C0H  - zápis: port adresy a dat øadièe (ATC)
+           Pøi zápisu na port 3C0h se støídá èíslo registru s daty registru. Pro
+           zajištìní  správné  následnosti  registru  a  dat  je  nutno nejdøíve
+           provést operaci ètení z adresy 3DAh (3BAh). Pøi zápisu èísla registru
+           se  uplatní  bity  0 a 4 jako èíslo registru, bit 5 pøepíná paletové
+           registry  pøístupné  pro  procesor  (=0) nebo pro øadiè EGA/VGA (=1).
+           Tzn.  pøi nastavování paletovıch registrù je potøeba nastavovat èísla
+           registrù  s  bitem  5  nastavenım  na  0 (tj. pøístupné pro CPU) a po
+           ukonèení  všech  operací  zapsat jako poslední bajt napø. hodnotu 20h
+           (nastaven bit 5), která opìt pøedá øízení øadièi EGA/VGA. U karty VGA
+           lze hodnoty registrù èíst z porty 3C1h.
+
+              proveïte IN  al,3DAH             ; nastavení módu adresy ATC
+                       OUT 3C0H,èíslo_registru ; volba registru ATC
+                       OUT 3C0H,hodnota        ; uloení hodnoty do reg.
+              pozn.: bity 0-4: nastavení èísla registru ATC
+                     bit 5: 1=moné zobrazení; 0=nastavení registru
+
+         Po vıbìru registru proveïte vıstup dat na port 03C0H:
+
+    reg.00h-0Fh  registry palet: nastavení barev podle atributù
+                bit 0: modrá (intenzita 2/3)
+                bit 1: zelená (intenzita 2/3)
+                bit 2: èervená (intenzita 2/2)
+                bit 3: sekundární modrá (intenzita 1/3)
+                          (bit 3 slouí té pro emulaci podtrení MDA)
+                bit 4: sekundární zelená (intenzita 1/3)
+                          (bit 4 slouí té pro emulaci intenzity CGA)
+                bit 5: sekundární èervená (intenzita 1/3)
+
+                U  karty  EGA jsou palety pamì o 16 bajtech, obsahující barevné
+                sloky  pro  kadou  z  16  barev. U karty VGA obsahují registry
+                palet  adresy  do  druhé  sady  registrù palet (registry barev),
+                obsahující koneèné nastavení barev.
+
+    reg.10H   øízení módu
+                bit 0: 0=textovı mód, 1=grafickı mód
+                bit 1: 0=barevné atributy, 1=monochrom. atributy (emulace MDA)
+                bit 2: 0=9.bod  znakù  C0h-DFh  zobrazen  jako  pozadí; 1=9.bod
+                       znakù C0h-DFh shodnı jako 8.bod (spojité èáry)
+                bit 3: vıznam bitu 7 atributu: 1=blikání, 0=zvıšenı jas pozadí
+                bit 5: kompatibilita   posunu   bodù   (pouze   VGA):  0=chrání
+                       porovnávání   linek   pøed   registrem  posunu  PANNING,
+                       1=povoluje posun PANNING pøi porovnávání linek
+                bit 6: hodiny bodù (pouze VGA): 0=data bodu jsou zavádìna kadı
+                       takt   bodù,  1=data  jsou  zavádìna  kadı  druhı  takt
+                       (videomód 13h)
+                bit 7: velikost  interních  palet  (pouze  VGA):  0=bity  4 a 5
+                       paletovıch  registrù  slouí  jako  bity  4 a 5 adresy v
+                       registrech barev (pomocí registru vıbìru barev lze volit
+                       4  skupiny  po  64 barvách registrù barev); 1=bity 4 a 5
+                       adresy  registrù barev jsou definovány v registru vıbìru
+                       palet (lze volit 16 skupin po 16 registrech barev)
+
+    reg.11H   nastavení barvy okolí (podobnì jako registry palet 00h - 0Fh)
+
+    reg.12H   registr povolení rovin barev
+                bit 0 a 3: 1=povoleno zobrazení roviny 0 a 3, 0=zákaz
+                bit 4,5: volba páru vıstupních signálù ke ètení pomocí bitù 4 a
+                         5 portu 3DAh/3BAh - viz (pouze EGA)
+                Povolení  zobrazení rovin lze vyuít napø. k animacím - zobrazí
+                se  napø.  jen  jedna  rovina,  pøepínáním  zobrazené roviny se
+                vytvoøí  animaèní  pohyb.  Nezobrazené  roviny  se zobrazí tak,
+                jakoby  neobsahovaly  ádná  data  (podle toho jsou té pouity
+                pøíslušné palety).
+
+    reg.13H   horizontální posun bodù PANNING
+                bit 0 a 3: poèet  bodù,  o  které jsou zobrazená data posunuta
+                            vlevo (celı obraz se posouvá vlevo).
+
+    reg.14h   registr vıbìru barev (pouze VGA)
+                bit 0,1: vıbìr  bitù  4  a 5 adresy palet registrù barev (pouze
+                         je-li bit 7 registru øízení módu 10h nastaven na 1)
+                bit 2,3: vıbìr bitù 6 a 7 adresy palet registrù barev
+
+
+3C1h - ètení hodnot registrù z portu 3C0h
+--------------------------------------------------------------------------------
+
+3C2h - zápis: rùzné øídící funkce (pro VGA lze tento registr èíst z adr. 3CCh)
+
+        +-+-+-+-+-+-+-+-+
+        |7 6 5 4 3 2 1 0|
+        +++++++++++++++++  bit
+         | | | | | | | +->  0:  1=volba adres 3BxH (MDA); 0=volba 3DxH (CGA)
+         | | | | | | +--->  1:  1=moná RAM; 0=blokov. pøístupu CPU k videoRAM
+         | | | | +-+-----> 2-3: takt bodù (horizontální frekvence)
+         | | | |                  EGA: 00=14MHz; 01=16MHz; 10=ext.; 11=rez.
+         | | | |                  VGA: 00=25MHz; 01=28MHz; 10=rez.; 11=rez.
+         | | | +--------->  4:  1=externí videoøadiè, 0=interní videoøadiè
+         | | |                   (pouze EGA) volba externího videoøadièe
+         | | |                    pøipojeného na rozšiøující konektor
+         | | +----------->  5:  stránkovı bit pro lichı/sudı mód
+         | |                     - volí 64K stránku pamìti textovıch módù
+         | |                       0=niší/1=vyšší 64K stránka pamìti
+         | +------------->  6:  polarita horizontálního zpìtného bìhu
+         |                       1=negativní polarita, 0=pozitivní polarita
+         +--------------->  7:  polarita vertikálního zpìtného bìhu
+                                 1=negativní polarita, 0=pozitivní polarita
+
+Monitory  pøipojené k VGA kartì jsou autosynchronizaèní - rozeznají správnì
+polaritu  synchronizace  a  nastaví  se  na  ni. Proto mohou bıt bity 6 a 7
+pouity u karet VGA k nastavení vertikálního rozlišení:
+         +--------+--------+---------------------+-----------------+
+         | bit 7  | bit 6  | vertikální velikost | aktivních linek |
+         +--------+--------+---------------------+-----------------+
+         |   0    |   0    |      rezervováno    |    rezervováno  |
+         |   0    |   1    |      400 linek      |     414 linek   |
+         |   1    |   0    |      350 linek      |     362 linek   |
+         |   1    |   1    |      480 linek      |     496 linek   |
+         +--------+--------+---------------------+-----------------+
+
+Takt  horizontálních  hodin  je  nutno  volit  podle  typu monitoru. Standardní
+barevnı  displej  vyaduje takt 14 MHz. Pro displej EGA se pouívá frekvence 16
+MHz.   Pøi   pouití  vyšší  frekvence  lze  dosáhnout  vyššího  horizontálního
+rozlišení.  Rozšiøující konektor EGA umoòuje pøipojit vnìjší zdroj hodin, èím
+je  moné  dosáhnout  napø. horizontální rozlišení 132 znakù na øádek. Bity pro
+volbu  horizontálních  hodin  slouí té k volbì pøepínaèe DIL pøi ètení jejich
+stavu (ètení portu 3C2h).
+
+     - ètení: vstupní stavovı registr #0
+          bit 4: stav pøepínaèù DIL - ète se stav jednoho ze ètyø pøepínaèù
+                  DIL: 0=spínaè je ve stavu 0 (OFF), 1=spínaè je 1 (ON)
+                  Ètenı pøepínaè DIL se volí bity 2 a 3 registru 3C2h (=takt)
+          bit 5: rozšiøující stav signálu FEAT0 (pouze EGA) - stav pinu 19 na
+                  rozšiøujícím konektoru: 0=LOW, 1=HIGH
+          bit 6: rozšiøující stav signálu FEAT1 (pouze EGA) - stav pinu 17 na
+                  rozšiøujícím konektoru: 0=LOW, 1=HIGH
+          bit 7: stav pøerušení od vertikálního zpìtného bìhu (pouze EGA)
+                  0=nastal vertikální zpìtnı bìh (nulování bitem 4 reg. 11h.)
+                  1=nebyl vertikální zpìtnı bìh, video se zobrazuje
+
+--------------------------------------------------------------------------------
+
+3C4h - zápis: index registru následnosti (tj. zapisuje se èíslo registru 0 a 4)
+                (u karty VGA lze té èíst)
+3C5h - zápis: data registru následnosti (po volbì registru portem 3C4h)
+                (u karty VGA lze té èíst)
+              (proveïte OUT 3C4h,èíslo_registru; potom OUT 3C5h,data)
+
+    reg.00H   reset následnosti registrù
+               bit 1: 0=synchronní reset (uchová obsah pamìti - musí bıt
+                        pouito pøed zmìnou registru módu taktování 01h)
+                      1=uvolnìní stavu reset (je-li té bit 0 ve stavu 1)
+               bit 0: EGA 0=asynchronní reset (mùe zpùsobit ztrátu dat pamìti)
+                          1=uvolnìní stavu reset (je-li té bit 1 ve stavu 1)
+                      VGA 0=synchronní reset (VGA neumoòuje asynchronní reset)
+                             (stejnı vıznam jako bit 1)
+                          1=uvolnìní stavu reset (je-li té bit 1 ve stavu 1)
+
+    reg.01H   mód taktování
+               bit 5: 1=vypnutí displeje, 0=zapnutí displeje (pouze VGA)
+                      (umoòuje vypnutí displeje bìhem generování obrázku;
+                       protoe se nespotøebovává èas k obsluze obrazovky,
+                       má videoprocesor plnı pøístup k videopamìti, co
+                       umoòuje rychlı pøístup k pamìti).
+               bit 4: posun dat ve video sériovém posuvném registru (pouze VGA)
+                       1=kadı 4. znakovı hodinovı takt
+                       0=kadı znakovı hodinovı takt (nebo kadı 2.-podle bitu 2)
+               bit 3: takt bodù: 1=pùlenı (niší rozlišení), 0=normální (vyšší)
+               bit 2: posun dat ve video sériovém posuvném registru:
+                       0=kadı  znakovı hodinovı  takt  (horizontální  rozlišení
+                         640/EGA nebo 720/VGA bodù)
+                       1=kadı druhı znakovı hodinovı takt (horizont. rozlišení
+                         320/EGA nebo 360/VGA bodù)
+                       Posuvnı   sériovı   registr   pøevádí   paralelní  data  z
+                       videopamìti na sériovı signál.
+               bit 1: šíøka pøístupu øadièe displeje k videopamìti (pouze EGA)
+                      0=øadiè  displeje  pøistupuje  ke sbìrnici videopamìti ve 4
+                        pamìovıch  cyklech  z  5  (pouívá se v módech s vysokım
+                        horizontálním rozlišením )
+                      1=øadiè  displeje  pøistupuje  ke sbìrnici videopamìti ve 2
+                        pamìovıch  cyklech  z  5  (pouívá  se v módech s niším
+                        horizontálním rozlišením)
+               bit 0: poèet bodù na znak: 1=8 bodù na znak, 0=9 bodù na znak
+                      (v  módu  9  bodù  na  znak  se zdvojuje u znakù C0h a DFh
+                      poslední sloupec); EGA pouívá 9 bodù pouze u videomódu 7
+
+    reg.02H   maskovací mapa: bity 0-3 povolují zápis do rovin 0-3 (1=povoleno)
+
+    reg.03H   volba mapy znakù (v textovém reimu):
+              EGA:  bit 0,1: volba generátoru znakù B (atributovı bit 3 = 0)
+                    bit 2,3: volba generátoru znakù A (atributovı bit 3 = 1)
+                       (znakové sady se mapují po 16 KB - vdy prvních 8 KB)
+              VGA:  bit 4,0,1: volba generátoru znakù B (atributovı bit 3 = 0)
+                    bit 5,2,3: volba generátoru znakù A (atributovı bit 3 = 1)
+                       (znakové sady se mapují po 8 KB)
+
+              Kadı znak má vyhraen prostor 32 bajtù (8 bodù na linku, maximálnì
+              32 linek). Jedna znaková sada zabírá 8 KB. U karty EGA je zbylıch 8
+              KB v pamìovém bloku 16 KB nevyuito. Pokud jsou znakové sady A a B
+              zvoleny  shodné,  pouije  se atributovı bit 3 ke zvıšení intenzity
+              popøedí znaku. Jsou-li znakové sady rozdílné, volí atributovı bit 3
+              znakovou sadu A (=1) nebo B (=0).
+
+    reg.04H   mód pamìti:
+               bit 3: 4-násobné zøetìzení pamìti (pouze VGA)
+                      0=roviny displeje jsou vybrány registrem maskovací mapy pro
+                        zápis  (reg. 02h portu 3C5h) a registrem volby ètecí mapy
+                        (reg. 04h portu 3CFh).
+                      1=roviny displeje jsou vybrány adresovımi bity A0 a A1 (tj.
+                        bajty jednotlivıch barevnıch rovin se støídají)
+               bit 2: 0=adresovací  mód  sudá/lichá  (sudá adresa - roviny 0 a 2,
+                        lichá adresa - roviny 1 a 3)
+                      1=sekvenèní adresovı mód
+               bit 1: 0=není rozšíøená pamì nad 64 KB (videopamì je 64 KB)
+                      1=je rozšíøená pamì nad 64 KB
+               bit 0: volba grafického/textového módu (pouze EGA)
+                      0=grafickı mód, 1=textovı mód
+
+---------------------------- registry barev (pouze VGA) -----------------------
+3C6h - ètení,zápis: registr masky
+              - je modifikován BIOSem na FFh a není pøístupnı
+
+3C7h - ètení: stavovı registr barev
+               bit 0,1: 0=probíhá  operace  ètení (naposledy byl pouit registr
+                          volby adresy pro ètení)
+                        3=probíhá  operace zápisu (naposledy byl pouit registr
+                          volby adresy pro zápis)
+
+3C7h - zápis: adresa pro mód ètení registrù
+         - nastavuje poèáteèní èíslo registru barev, ze kterého bude èteno
+
+3C8h - ètení,zápis: adresa pro mód zápisu registrù
+         - nastavuje poèáteèní èíslo registru barev, do kterého bude zapisováno
+
+3C9h - ètení,zápis: data registrù barev
+         - ètení i zápis probíhá po skupinách 3 bajtù:
+              1.- èervená sloka (6 bitù)
+              2.- zelená sloka (6 bitù)
+              3.- modrá sloka (6 bitù)
+
+         Po  ètení/zápisu  všech  3  bajtù  jednoho barevného registru se èíslo
+         registru  automaticky  inkrementuje  na  další  registr.  Volbou  nové
+         ètecí/zápisové adresy se pøednastaví jako první èervená sloka.
+--------------------------------------------------------------------------------
+3CAh - zápis: registr grafické pozice #2 - inicializace èipu #2 (pouze EGA)
+                bit 0 a 1: Pùvodní  implementace  IBM EGA obsahovala 2 grafické
+                            øidicí èipy. Na tuto adresu musí bıt zapsáno 1 (bity
+                            2 a 3 budou pouity jako roviny 2 a 3).
+
+3CAh - ètení: ètení portu zapsaného na adresu 3BAh,3DAh (pouze VGA)
+
+3CCh - zápis: registr grafické pozice #1 - inicializace èipu #1 (pouze EGA)
+                bit 0 a 1: Pùvodní  implementace  IBM EGA obsahovala 2 grafické
+                            øidicí èipy. Na tuto adresu musí bıt zapsáno 0 (bity
+                            0 a 1 budou pouity jako roviny 0 a 1).
+
+3CCh - ètení: ètení portu zapsaného na adresu 3C2h (pouze VGA)
+--------------------------------------------------------------------------------
+3CEh - zápis: volba èísla grafického registru (pro zápis na port 3CFh)
+3CFh - zápis: registr dat øadièe grafiky (na adrese 3CEh se volí èíslo registru)
+              (proveïte OUT 3CEh,èíslo_registru; potom OUT 3CFh,data)
+
+    reg.00H   nastavení/resetování bitù rovin (bit 0 a 3 = rovina 0 a 3)
+                bit 0,1,2,3: všechny  bity  bajtu  pøíslušné  roviny  budou  pøi
+                             zápisu  v  zápisovém  módu  0  nastaveny  na  danou
+                             hodnotu bitu podle registru 00h, bude-li bit roviny
+                             0 a 3 registru 01h nastaven na 01h.
+
+    reg.01H   povolení nastavení/resetování bitù (bit 0 a 3 = rovina 0 a 3)
+                bit 0,1,2,3: 0 = pøíslušná  barevná rovina 0 a 3 bude nastavena
+                                 pøi zápisu na hodnotu zapisovaného bajtu
+                             1 = pøíslušná  barevná rovina 0 a 3 bude nastavena
+                                 pøi  zápisu  na hodnotu podle registru 00h (tj.
+                                 všech 8 bitù se nastaví na pøíslušnı bit roviny
+                                 registru 00h).
+
+    reg.02H   porovnání barev. Bity 0-3 volí barvu pro ètecí mód 01h
+                Pøi  ètení  dat ve ètecím módu 01h body s barvou zadanou v tomto
+                registru  budou  nastaveny na hodnotu 1, ostatní barvy budou mít
+                hodnotu  0.  Porovnávají  se  pouze roviny nevyjmuté z porovnání
+                pomocí  registru  07h.  Tento  zpùsob  ètení je vhodnı napø. pøi
+                vyplnìní uzavøeného mnohoúhelníku danou barvou. Lze takto snadno
+                zjistit hranice obrazce tvoøené zadanou barvou.
+
+    reg.03h   rotace dat a volba funkce pro zápisovı mód 00h
+                bit 0 a 3: nastavení poètu rotací pro zápisovı mód 00H; Bajt je
+                            pøed zápisem rotován o danı poèet bitù vpravo (bit 0
+                            se  pøesune do bitu 7). Pouívá se napø. k zápisu do
+                            poadovaného  bitu  v  bajtu  bez  nutnosti provádìt
+                            rotace  dat  programovì (operace maskování registrem
+                            08h a jiné operace se provádìjí a po rotaci bajtu).
+                bit 4,5: funkce  pøi  zápisu  0=beze  zmìny, 1=AND, 2=OR, 3=XOR.
+                         Logické  funkce  AND,  OR  a  XOR vyadují pøed zápisem
+                         ètení dat z pamìti, aby byly interní registry naplnìny.
+
+    reg.04H   volba  ètecí  mapy. Bity 0,1 volí èíslo roviny pro ètecí mód 00h 0
+              a 3 (v módu 01h nemá nastavení ádnı efekt).
+
+    reg.05H   registr módu
+                bit 0,1: zápisovı mód 0 a 2;
+                         0 = lze zapisova do všech barevnıch rovin oddìlenì nebo
+                             s  vyuitím registrù pro nastavení/nulování do více
+                             rovin souèasnì
+                         1 = jedinou  operací  pøesunu MOV lze pøesouvat internì
+                             data  všech  4  barevnıch rovin najednou - slouí k
+                             rychlım pøesunùm dat uvnitø videopamìti.
+                         2 = všech  8  sousedních  bodù  je  nastaveno  na barvu
+                             odpovídající   hodnotì   zapisovaného   bajtu;  tj.
+                             hodnota  bitu  0 se zapíše do všech 8 botù v rovinì
+                             0,  hodnota  bitu 1 do všech 8 bitù v rovinì 1 atd.
+                             Hlavní pøednost tohoto módu spoèívá ve spolupráci s
+                             registrem  bitové  masky  -  lze zapisovat bod dané
+                             barvy bez nutnosti rotovat data.
+                         3 = pouze pro VGA:
+                bit 2: testovací  podmínky  (jen EGA): 0=norm. provoz, 1=všechny
+                       vıstupy EGA ve stavu vysoké impedance pro testování
+                bit 3: mód ètení: 0=ètení z urèenıch rovin, 1=porovnáním barev
+                bit 4: liché/sudé  adresování RAM: 0=normální EGA mód, 1=na sudé
+                       adrese je sudá rovina (0,2), na liché lichá rovina (1,3).
+                bit 5: rozlišení  CGA  (pouze  EGA):  0=1  bit/bod, 1=2 bity/bod
+                       (videomódy 4 a 5)
+                bit 5,6: registr  posuvu  (pouze VGA): 0=1 bit/bod, 1=2 bity/bod
+                         (videomódy 4 a 5), 2=8 bitù/bod (videomód 13h)
+
+    reg.06H   rùzné grafické øídicí pøíkazy
+                bit 0: 1=grafickı mód, 0=textovı mód
+                bit 1: zøetìzení  liché  a  sudé  pamìti:  0=standardní  EGA/VGA
+                       adresování;  1=emulace  MDA  - adresovı bit 0 se zamìní s
+                       nejvyšším  adresovım  bitem - lichá adresa adresuje liché
+                       roviny, sudá sudé.
+                bit 2,3: mapování pamìti pro CPU: 0=A000h (128K), 1=A000h (64K),
+                         2=B000h  (32K  -  MDA),  3=B800h  (32K  -  CGA).  Kromì
+                         mapování 0 je moná spolupráce více adaptérù v pamìti.
+
+    reg.07H   zákaz maskování barev
+                Bity  0  a  3  vyjímají nastavením na hodnotu 1 roviny 0 a 3 z
+                porovnávací logiky ve ètecím módu 01h (viz registr 02h).
+
+    reg.08H   bitová  maska.  Bity 0-7 volí bity, které budou maskovány ve všech
+              rovinách (0=bit neovlivní pamì, 1=bit se zapíše).
+--------------------------------------------------------------------------------
+03B4H nebo 03D4H  - zápis: vıbìr øídícího registru CRT. Pouijte tento port
+                           k  nastavení nìkterého z 18 registrù øadièe CRT.
+                           Proveïte  instrukci  vıstupu  èísla  registru na
+                           port    03B4H    nebo   03D4H   (OUT   03B4H,AL)
+                           následovanou  ètením  dat nebo zápis dat na port
+                           03B5H nebo 03D5H.
+
+03B5H nebo 03D5H  - øídící  registr  øadièe  CRT. Po vıbìru registru pomocí
+                    portu  03B4H  nebo  03D4H lze pøes tento port èíst nebo
+                    pøes   nìj  zapisovat  data  do  nastaveného  vnitøního
+                    registru øadièe CRT.
+
+    Pozn.: Bit  0 portu 03C0H nastavuje, kterı pár adres portù bude pouit.
+           (normálnì je pro MDA adresa 03BxH a pro CGA adresa 03DxH).
+
+--------------------------------------------------------------------------------
+3B4h,3D4h - zápis: vıbìr  øídícího  registru CRT. Pouijte tento port k nastavení
+                   nìkterého  z  registrù  øadièe CRT. Proveïte instrukci vıstupu
+                   èísla  registru  na  port 3B4h/3D4h (OUT 3B4h,AL) následovanou
+                   ètením dat nebo zápis dat na port 3B5h nebo 3D5h.
+
+3B5h,3D5h - øídící  registr øadièe CRT. Po vıbìru registru pomocí portu 3B4h/3D4h
+            lze  pøes tento port èíst nebo pøes nìj zapisovat data do nastaveného
+            vnitøního registru øadièe CRT.
+
+  Pozn.: Bit 0 portu 3C0H nastavuje, kterı pár adres portù bude pouit.
+           (normálnì je pro MDA adresa 03BxH a pro CGA adresa 03DxH).
+
+    reg.00h   celková horizontální délka (vèetnì okolí a synchronizace)
+               EGA: celková horizontální délka - 2 (napø. 90 znakù -> èíslo 88)
+               VGA: celková horizontální délka - 5 (napø. 90 znakù -> èíslo 85)
+
+    reg.01h   konec horizontálního zobrazení (tj. poèet zobrazenıch znakù)
+               EGA: poèet zobrazenıch znakù na øádku - 1
+               VGA: poèet zobrazenıch znakù na øádku
+
+    reg.02h   zaèátek horizontálního zatemnìní (znaková pozice pro zaèátek zat.)
+
+    reg.03h   konec horizontálního zatemnìní (urèuje délku zatemnìní)
+                bit 0 a 4: konec horizontálního zatemnìní - reprezentuje niších
+                            5  bitù  znakového  èítaèe, pøi kterıch nastane konec
+                            horizontálního   zatemnìní  (šíøka  impulsu  je  tedy
+                            rozdílem  této  hodnoty  a  niších  5  bitù  zaèátku
+                            horizontálního  zatemnìní).  U  karty  VGA  je 6. bit
+                            konce horiz. zatemnìní uloen v registru 5 - bit 7.
+                bit 5,6: korekce horizontálního èasování (poèet znakovıch taktù k
+                         dosaení správné synchronizace - pøídavná prodleva)
+                bit 7: kompatibilní ètení (pouze VGA)
+                        0=zákaz pøístupu k registrùm 10h a 11h (vert. SYN)
+                        1=povolen pøístup k registrùm 10h a 11h (vert. SYN)
+
+    reg.04h   zaèátek horizontálního zpìtného bìhu (znaková pozice pro zaèátek)
+
+    reg.05h   konec horizontálního zpìtného bìhu
+                bit 0 a 4: konec  horizontálního zpìtného bìhu (5-bitová hodnota
+                            reprezentující   stav  nejniších  5  bitù  znakového
+                            èítaèe,   pøi  kterém  nastane  konec  horizontálního
+                            zpìtného bìhu)
+                bit 5,6: prodleva horizontálního zpìtného bìhu (pro synchronizaci
+                         monitoru) - poèet znakovıch taktù k pøídavné prodlevì
+                EGA:  bit 7: zaèátek adresace pamìti pro zobrazení (pouze EGA)
+                             0=zaèátek na sudé adrese, 1=zaèátek na liché adrese
+                VGA:  bit 7: šestı bit konce horizontálního zatemnìní
+
+    reg.06h   poèet vertikálních linek celkem (nejniších 8 bitù)
+                EGA vertik. linek = vertikální zpìtnı bìh + platné linky
+                VGA vertik. linek = vertikální zpìtnı bìh + platné linky - 2
+
+    reg.07h   doplòující bity registrù
+                bit 0: bit 8 vertikálních linek celkem (registr 06h)
+                bit 1: bit 8 konce vertikálního zobrazení (registr 12h)
+                bit 2: bit 8 zaèátku vertikálního zpìtného bìhu (registr 10h)
+                bit 3: bit 8 zaèátku vertikálního zatemnìní (registr 15h)
+                bit 4: bit 8 øádkového porovnání (registr 18h)
+                bit 5: bit 9 vertikálních linek celkem (registr 06h) (jen VGA)
+                       bit 8 pozice kurzoru (registr 0Ah) (jen EGA)
+                bit 6: bit 9 konce vertikálního zobrazení (registr 12h) (jen VGA)
+                bit 7: bit 9 zaèátku vertik. zpìt. bìhu (registr 10h) (jen VGA)
+
+    reg.08h   poèáteèní videolinka po vertikálním zpìtném bìhu
+                bit 0 a 4: poèáteèní zobrazená videolinka textového øádku
+                            - pouívá   se  k  jemnémo  rolování  obrazovky  po
+                              videolinkách;  první øádek obrazovky se nezobrazí
+                              celı,  zobrazí  se  a od zadané videolinky. Tuto
+                              funkci  lze  pouít té v grafickém videomódu - v
+                              registru   09h   je   udána   maximální  velikost
+                              znakového øádku.
+
+                bit 5,6: poèet bajtù bìhem operace PANNING (pouze VGA)
+
+    reg.09h   registr maximální videolinky øádku
+                bit 0 a 4: maximální videolinka = poèet linek na znak - 1
+                bit 5: bit 9 poèátku vertikálního zatemnìní (pouze VGA)
+                bit 6: bit 9 øádkového porovnávání (pouze VGA)
+                bit 7: konverze 200 linek na 400 (zdvojení videolinek;pouze VGA)
+                       0=normální operace, 1=zobr. se 200 linek na celou obraz.
+
+    reg.0Ah   poèáteèní linka kurzoru
+                bit 0 a 4: poèáteèní videolinka kurzoru na textovém øádku
+                bit 5: vypnutí kurzoru (pouze VGA): 0=vypnut, 1=zapnut
+
+    reg.0Bh   koncová linka kurzoru
+                bit 0 a 4: koncová videolinka kurzoru na textovém øádku
+                bit 5,6: zpodìní kurzoru (poèet znakù) k zajištìní správné
+                         synchronizace v módu vysokého rozlišení
+
+    reg.0Ch   poèáteèní adresa zobrazené videopamìti - vyšší bajt
+
+    reg.0Dh   poèáteèní adresa zobrazené videopamìti - niší bajt
+                Pøi sériovém øazení bajtù z rovin je nutno zadat adresu v rovinì,
+                ne  fyzickou adresu v pøístupné pamìti - napø. v textovém módu se
+                zadá fyzická adresa/2 (støídají roviny znakù a atributù)
+
+    reg.0Eh   adresa kurzoru - vyšší bajt
+
+    reg.0Fh   adresa kurzoru - niší bajt
+                Nastavením kurzoru mimo zobrazenou èást lze kurzor vypnout.
+
+    reg.10h   poèátek vertikálního zpìtného bìhu - niších 8 b. èísla videolinky
+        Registr  10h  je  pøístupnı  (modifikovatelnı)  pouze  pøi povolení módu
+        kompatibilního  ètení  (bit  7 registru 03h nastaven na 1). U videokarty
+        EGA  mùe  zaèátek  vertikálního  zpìtného bìhu vyvolat pøerušení IRQ 2.
+        Pøíznak pøerušení musí bıt nulován bitem 4 reg. 11h.
+
+    reg.10h   ètení (pouze EGA) - vyšší bajt adresy svìtelného pera (HIGH)
+
+    reg.11h   konec vertikálního zpìtného bìhu
+                bit 0 a 3: konec vertikálního zpìtného bìhu
+                            - nejniších  5 bitù hodnoty èísla videolinky, která
+                              zpùsobí ukonèení vertikálního zpìtného bìhu
+                bit 4: nulování vertikálního pøerušení (pouze EGA)
+                       0=nulování vertikálního pøerušení; 1=ádná funkce
+                bit 5: zákaz vertikálního pøerušení IRQ 2 (pouze EGA)
+                       0=povolení vertikálního pøerušení; 1=zákaz vert.pøerušení
+                bit 6: volba poètu obèerstvovacích cyklù DRAM (pouze VGA)
+                       0=volba 3 refresh cyklù; 1=volba 5 refresh cyklù DRAM
+                bit 7: ochrana registrù 0 a 7 (pouze VGA)
+                       0=ochrana není aktivní; 1=zápis do reg. 0 a 7 blokován
+          Registr  11h  je  pøístupnı  (modifikovatelnı) pouze pøi povolení módu
+          kompatibilního ètení (bit 7 registru 03h nastaven na 1).
+
+    reg.11h   ètení (pouze EGA) - niší bajt adresy svìtelného pera (LOW)
+
+    reg.12h   konec zobrazení ve vertikálním smìru (poslední zobrazená linka)
+
+    reg.13h   pøírustek adres videolinek (øádkù)/2
+              (pøírustek v text.módu=rozdíl adres/4, v graf.módu=rozdíl/2)
+
+    reg.14h   poloha podtrení pro MDA mód
+                bit 0 a 4: rel. èíslo videolinky s podtrením + 1
+                bit 5: dìlení znak.hodin èítaèe adres pamìti/4 (pro mód 13h VGA)
+                       0=normální hodiny, 1=dìlení znak. hodin/4 (je-li bit 6=1)
+                bit 6: 0=slovní adresování, 1=dvouslovní adresování (pouze VGA)
+
+    reg.15h   zaèátek vertikálního zatemnìní (èíslo videolinky)
+                Linky od konce zobrazení po zaèátek zatemnìní = okolí BORDER.
+
+    reg.16h   konec vertikálního zatemnìní
+                bit 0 a 4 (EGA) nejniších 5 bitù èísla videolinky konce zatem.
+                bit 0 a 6 (VGA) nejniších 7 bitù èísla videolinky konce zatem.
+
+    reg.17h   øídicí registr módu
+                bit 0: 0= adresování videolinek kompatibilní s CGA (adresovı bit
+                          0  je nahrazen jako adresovı bit 13 - sudıch 100 linek
+                          je umístìno ve spodních 8 KB pamìti, lichıch 100 linek
+                          je umístìno v horních 8 KB pamìti - celkem 16 KB)
+                       1= není substituce bitu 0, sekvenèní adresování pamìti
+                bit 1: 0= adresování    videolinek   kompatibilní   s   Hercules
+                          (adresovı  bit  1  je  nahrazen jako adresovı bit 14 -
+                          dìlení pamìti na kvadráty po 16 KB)
+                       1= není substituce bitu 1, sekvenèní adresování pamìti
+                bit 2: 0=zvıšení èítaèe videolinek kadı horizont. zpìtnı bìh
+                       1=zvıšení èítaèe videolinek kadı 2. horizont. zpìtnı bìh
+                         (kadá videolinka se opakuje 2x)
+                bit 3: 0=zvıšení adresy pamìti kadı znakovı takt
+                       1=zvıšení adresy pamìti kadı druhı znakovı takt
+                bit 4: 0=povolení/1=blokování vıstupu EGA (pouze IBM EGA)
+                bit 5: 0=adres. 13 bity (64 K pamìti); 1=adres. 15 bity (>64 KB)
+                bit 6: 1=bajtové adresování pamìti; 0=slovní adresování
+                bit 7: 0=zastavení všech øíd.signálù (reset); 1=normální provoz
+
+    reg.18h   registr porovnávání linek pro dìlenou obrazovku
+                - Po  dosaení èísla videolinky zadané v registru porovnávání se
+                  nastaví  adresa  ve  videopamìti  na  0. To lze vyuít napø. k
+                  rolování jen horní èásti obrazovky.
+--------------------------------------------------------------------------------
+3BAh,3DAh - zápis: rozšiøující øídicí registr (pro VGA lze tento registr èíst
+                   z adresy 3CAh)
+
+            bit 0: rozšiøující øídicí bit FC0 (pouze EGA) 0=LOW, 1=HIGH
+            bit 1: rozšiøující øídicí bit FC1 (pouze EGA) 0=LOW, 1=HIGH
+            bit 3: volba vertikální synchronizace (pouze VGA)
+                        0=normální vıstup vertikální synchronizace na monitor
+                        1=vıstup vert. synchr. na monitor je logickım OR mezi
+                          vertikální synchronizací a vertik. uvolnìním displeje
+
+          - ètení: stavovı registr #1
+        +-+-+-+-+-+-+-+-+
+        |7 6 5 4 3 2 1 0|
+        +++++++++++++++++ bit
+             | | | | | +-> 0: zpìtnı bìh (horizontální nebo vertikální)
+             | | | | |        0=je mód zobrazení
+             | | | | |        1=displej ve zpìtném bìhu (vert. nebo horiz.)
+             | | | | +---> 1: impuls od svìtelného pera (pouze EGA)
+             | | | |          1=pøišel impuls od svìtelného pera (lze pøeèíst
+             | | | |            registry LOW a HIGH polohy svìtelného pera)
+             | | | +-----> 2: tlaèítko svìtelného pera (pouze EGA)
+             | | |             1=spínaè svìtelného pera uvolnìn (= otevøen)
+             | | |             0=spínaè svìtelného pera stisknut (= uzavøen)
+             | | +-------> 3: 1=probíhá vertikální zpìtnı bìh, 0=je zobrazení
+             | |               (stav 1 mùe generovat pøerušení IRQ 2)
+             +-+---------> 4,5: diagnostika (pouze EGA) - ètení stavu dvou
+                                z šesti barvovıch vıstupù. Dvojice vıstupù
+                                se volí bity 4 a 5 registru 12h portu 3C0h.
+
+                      zápis: bit 5   bit 4       stav: bit 5       bit 4
+                              0       0              èervená       modrá
+                              0       1             sek.modrá      zelená
+                              1       0            sek. èervená  sek. zelená
+
+           Bit  0  je  pouíván  u  starších typù videoadaptérù k synchronizaci
+           operací  ètení  a zápisu do videopamìti (pøístup k videopamìti pouze
+           bìhem zpìtného bìhu, aby nevznikalo snìení obrazovky). Tento bit je
+           moné  pouívat  také  k  synchronizaci na horizontální zpìtnı bìh u
+           programù,   pouívající   pøepínání   palet   barev   bìhem  jednoho
+           videosnímku.
+
+
+                  VGA (pohled na zadní panel videokarty)
++-----------------------------------------------------------------------+
+|                ENHANCED monochromatickı monitor                       |
++-----------------------------------------------------------------------+
+|                         +------------\                                |
+|                         |      6 o     \                              |
+|                         | 1 o      11 o |                             |
+|                         |      7 o------+-- návrat analog. monochrom. |
+| analog. monochrom. -----+-2 o      12 o-+-- èíslicová zem             |
+|                         |      8 o      |                             |
+|                         | 3 o      13 o-+-- horizontální synchronizace|
+|                         |      9 o      |                             |
+|                         | 4 o      14 o-+-- vertikální synchronizace  |
+|                         |     10 o------+-- èíslicová zem             |
+|                         | 5 o      15 o |                             |
+|                         |              /                              |
+|                         +------------/                                |
++-----------------------------------------------------------------------+
++-----------------------------------------------------------------------+
+|                     ENHANCED barevnı monitor                          |
++-----------------------------------------------------------------------+
+|                         +------------\                                |
+|                         |      6 o--------- návrat analogové èervené  |
+|  analogová èervená -----+-1 o      11 o |                             |
+|                         |      7 o------+-- návrat analogové zelené   |
+|  analogová zelená ------+-2 o      12 o |                             |
+|                         |      8 o------+-- návrat analogové modré    |
+|  analogová modrá -------+-3 o      13 o-+-- horizontální synchronizace|
+|                         |      9 o      |                             |
+|                         | 4 o      14 o-+-- vertikální synchronizace  |
+|                         |     10 o------+-- èíslicová zem             |
+|                         | 5 o      15 o |                             |
+|                         |              /                              |
+|                         +------------/                                |
++-----------------------------------------------------------------------+
+Piny 11, 12 a 14 jsou pouity jako identifikaèní bity 0 a 2 monitoru.
+
+
+                   Rozšiøující konektor Mikro Kanál VGA
++------------------------------------+----------------------------------+
+|vıstup uvolnìní video sbìrnice A-V1 |B-V1  zem                         |
+|datová sbìrnice 7              A-V2 |B-V2  datová sbìrnice 0           |
+|                                    |B-V3  datová sbìrnice 1           |
+|hodiny DAC                     A-V4 |B-V4  datová sbìrnice 2           |
+|uvolnìní hodin DAC             A-V5 |B-V5  zem                         |
+|datová sbìrnice 6              A-V6 |B-V6  datová sbìrnice 3           |
+|zem                            A-V7 |B-V7  datová sbìrnice 4           |
+|sloené zatemnìní              A-V8 |B-V8  datová sbìrnice 5           |
+|horizontální synchronizace     A-V9 |B-V9  zem                         |
+|vertikální synchronizace       A-V10|B-V10 vıstup uvolnìní videosignálu|
++------------------------------------+----------------------------------+
+
+Nastavení poèáteèní adresy videopamìti se uplatní a po dokonèení jednoho
+snímku.   Proto   pro   zamezení   blikání  obrazu  pøi  èastém  støídání
+videostránek   je  potøeba  po  zmìnì  videostránky  vyèkat  na  snímkovı
+synchronizaèní impuls.
+
+
+--------------------------------------------------------------------------------
+                      Videokarta Trident Super VGA
+--------------------------------------------------------------------------------
+
+Typy videokaret Trident Super VGA: TVGA 8800, TVGA 8900 a TVGA 9000.
+
+Rozdíly:
+--------
+TVGA  8800  implicitnì  mapuje videopamì do prostoru A000-BFFF (banka 128 KB).
+Mùe  pouívat  512 KB videopamìti. Lze dosáhnout rozlišení 1024x768/16 barev a
+640x480/256  barev.  Podporuje super fonty - dovolují uloení do videopamìti a
+16 KB kódù znakù, kadı znak mùe mít max. 32 bajtù, s podporou matice 16x16.
+
+TVGA  8900  implicitnì  mapuje  videopamì do prostoru A000-AFFF (banka 64 KB).
+Mùe  pouívat  1  MB  videopamìti. Lze dosáhnout rozlišení 1024x768/16 barev a
+1024x768/256 barev. Podporuje emulaci standardù MDA, CGA a Hercules.
+
+
+Karty  TVGA  mohou  pouívat 8- nebo 16-bitovou sbìrnici a mikrokanál PS/2. Pro
+mód  1024x768  je  prokládání  nastaveno spínaèem DIP SW3. Propojka J2 povoluje
+monost  automatické  detekce  šíøky sbìrnice videokartou. Spínaè SW5 povoluje,
+aby  karta  byla  konfigurována pro rychlé nebo pomalé dekódování adres pamìti.
+Spínaè  SW6  umoòuje  konfigurovat  kartu  pro  8-  nebo  16-bitovı  pøístup k
+videopamìti.  Autodetekce  detekuje  8-  nebo  16-bitovou  sbìrnici a nastavuje
+pøíznak v inicializaèním registru módu 2 (index 0fh).
+
+Registr hardwarové verze:
+    - index 0Bh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 0 a 3: verze èipu (< 3 = 8800, 3 = 8900, 23h = 9000)
+      Po  jakémkoliv  zápisu do tohoto registru se nastaví registry øízení módu
+      do  reimu staré definice. Ètením se zmìní pøíznak registrù mezi starou a
+      novou definicí.
+
+Registr øízení módu 2 - stará definice (po zápisu do reg. hardw. verze 0Bh):
+    - index 0Dh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 0 a 2: volba emulace 0=VGA, 3=EGA, 5=CGA, MDA, Hercules
+          bit 4: 0=zákaz  rozšíøené pamìti nad 256 KB (pamì je kompatibilní se
+                 standardní  VGA,  pøi  adresování  se  zalamuje  pøes 256 KB),
+                 1=povolení rozšíøené pamìti (je stránkování)
+
+Registr øízení módu 2 obsahuje øídicí informace pro hodiny.
+
+Registr øízení módu 1 - stará definice (po zápisu do reg. hardw. verze 0Bh):
+    - index 0Eh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 0: adresovı bit 17 øadièe displeje (volba 512 KB pro zobrazení)
+                 V reimu 1024x768/256 se zobrazí obì èásti po 512 KB.
+          bit 1 a 2: volba banky 256 KB (0 a 3) (pro stránkování 128 KB)
+          bit 3: 0=volba 8-bitové datové sbìrnice, 1=16-bitová datová sbìrnice
+    V reimu staré definice je stránkování pamìti po 128 KB.
+
+Registr øízení módu 1 - nová definice (po zápisu a ètení z rg.hardw.verze 0Bh):
+    - index 0Eh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 0: volba segmentu 64 KB (pro stránkování 64 KB)
+          bit 1: volba stránky 128 KB (pro stránkování 64 KB i 128 KB)
+          bit 2 a 3: volba banky 256 KB (0 a 3) (pro stránkování 64 KB)
+    V  reimu  nové  definice je stránkování pamìti po 64 KB. Tento registr lze
+    pouít  pøímo  jako  nejvyšší  4  bity adresy pro volbu pamìti 64 KB. Bit 1
+    (volba  stránky 128 KB) je pro operace zápisu do pamìti invertován. Zápis 0
+    do  bitu  1  zvolí  pro  operace  zápisu  do pamìti horní stránku 128 KB, 1
+    zpøístupní  dolní stránku 128 KB. Pro operace ètení z pamìti není tento bit
+    invertován.  Pøi  ètení  z  registru se pøeète nastavení pro operace ètení,
+    oproti zápisu do registru bude tedy bit 1 invertován.
+
+Inicializaèní registr módu 2:
+    - index 0Fh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 7: 0=volba 16-bitové ROM, 1=volba 8-bitové ROM
+          bit 6: 0=zákaz ROM na kartì, 1=povolení ROM na kartì
+          bit 5: volba adresování 3xx nebo 2xx
+          bit 4: definice sbìrnice PS/2
+          bit 0 a 3: nastavení pøepínaèù
+
+Registr testování modulu CRTC:
+    - index 1Eh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 7: ovládání bitu 16 adresování videopamìti (pouze 8900)
+                 0=zákaz adresování bitem 16 (=standard VGA, zpùsobí zalamování
+                 adresy pøi zobrazování pøes 64 KB), 1=moná adresace bitem 16
+          bit 5: bit 16 poèáteèní adresy zobrazení displeje
+          bit 2: 0=není vertikální prokládání, 1=je vertikální prokládání
+
+Registr softwarového programování (pouze 8900):
+    - index 1Fh na portu 3C4h, registr lze èíst i zapisovat na portu 3C5h
+          bit 0 a 1: velikost pamìti (lze èíst velikost pamìti)
+
+Registr povolení adaptéru displeje (PC/AT):
+    - port 46E8h, pouze ètení
+         bit 3: 0=adaptér VGA je povolen, 1=adaptér VGA je blokován
+
+Registr povolení video podsystému (PS/2):
+    - port 3C3h, ètení i zápis
+         bit 0: 0=povolena základní deska VGA, 1=zakázána základní deska VGA
+
+Identifikace karty Trident TVGA
+-------------------------------
+Karta Trident TVGA mùe bıt identifikována vıskytem invertování bitu 1 registru
+módu  1 (index 0Eh portu 3C4h/3C5h - bit volby stránky). Po zápisu hodnoty 1 do
+tohoto bitu bude ètena hodnota 0 a opaènì.
+
+Verzi  karty Trident TVGA lze urèit ètením registru hardwarové verze (index 0Bh
+portu  3C4h/3C5h).  Zápisem  do  tohoto  registru  se  nastaví  systém do staré
+definice. Je-li údaj zjištìnı následujícím ètení registru menší ne 3, jedná se
+o 8800.
+
+Velikost  pamìti  lze  zjistit ètením registru softwarového programování (index
+1Fh portu 3C4h/3C5h).
+
+
+Videomódy karty Trident TVGA
+----------------------------
++---------+---------+-----+-----+----+------+-------+-----+----+----+----+
+|   Mód   |Graf/Text|Pozic|Øádkù|Font|Horiz.|Vertik.|Barev|8800|8900|9000|
++---------+---------+-----+-----+----+------+-------+-----+----+----+----+
+| 80 (50h)| textovı |  80 |  30 |8x16|  640 |  480  |  16 |  x |  x |    |
+| 81 (51h)| textovı |  80 |  43 |8x11|  640 |  480  |  16 |  x |  x |    |
+| 82 (52h)| textovı |  80 |  60 |8x8 |  640 |  480  |  16 |  x |  x |    |
+| 83 (53h)| textovı | 132 |  25 |8x14| 1056 |  350  |  16 |  x |  x |    |
+| 84 (54h)| textovı | 132 |  30 |8x16| 1056 |  480  |  16 |  x |  x |    |
+| 85 (55h)| textovı | 132 |  43 |8x11| 1056 |  473  |  16 |  x |  x |    |
+| 86 (56h)| textovı | 132 |  60 |8x8 | 1056 |  480  |  16 |  x |  x |    |
+| 87 (57h)| textovı | 132 |  25 |9x14| 1188 |  350  |  16 |  x |  x |    |
+| 88 (58h)| textovı | 132 |  30 |9x16| 1188 |  480  |  16 |  x |  x |    |
+| 89 (59h)| textovı | 132 |  43 |9x11| 1188 |  473  |  16 |  x |  x |    |
+| 90 (5Ah)| textovı | 132 |  60 |9x8 | 1188 |  480  |  16 |  x |  x |    |
+| 91 (5Bh)|grafickı | 100 |  75 |8x8 |  800 |  600  |  16 |  x |  x |    |
+| 92 (5Ch)|grafickı |  80 |  25 |8x16|  640 |  400  | 256 |  x |  x |    |
+| 93 (5Dh)|grafickı |  80 |  30 |8x16|  640 |  480  | 256 |  x |  x |    |
+| 94 (5Eh)|grafickı | 100 |  75 |8x8 |  800 |  600  | 256 |  - |  x |    |
+| 95 (5Fh)|grafickı | 128 |  43 |8x16| 1024 |  768  |  16 |  x |  x |    |
+| 97 (61h)|grafickı |  96 |  64 |8x16|  768 | 1024  |  16 |  x |  x |    |
+| 98 (62h)|grafickı | 128 |  48 |8x16| 1024 |  768  | 256 |  - |  x |    |
++---------+---------+-----+-----+----+------+-------+-----+----+----+----+
+
+Adresování pamìti
+-----------------
+Pøístup  k  pamìti  lze  volit  buï  pomocí  mapování bank 64 KB (nová definice
+registrù  øízení  módu) nebo 128 KB (stará definice registrù øízení módu). TVGA
+8800 mùe adresovat 512 KB pamìti, TVGA 8900 1 MB pamìti.
+
+
+Nastavení poèáteèní adresy k zobrazení
+--------------------------------------
+K zobrazení 1 MB pamìti je nutné pouít registr øízení módu 1 ve staré definici
+a registr testování modulu CRTC.
+
+
+Návratovı kód funkce nastavení módu
+-----------------------------------
+Po povelu nastavení videomódu (funkce AH=0) se navrací v AH návratovı kód:
+0 ......... nastavení módu bylo úspìšné
+80h ....... chyba - špatné nastavení pøepínaèù
+81h ....... nedostateèná videopamì
+82h ....... krystal 36 MHz nepodporuje mód 8800
+    ....... mód nepodporován 8900
+83h ....... krystal 40 MHz nepodporuje mód 8800
+    ....... mód nepodporován 8900
+84h ....... krystal 44.9 MHz nepodporuje mód 8800
+    ....... mód nepodporován 8900
+85h ....... vadnı nebo ádnı krystal 8800
+86h ....... špatná základna CRTC pro dvojitou obrazovku 8900
+87h ....... textovı mód nepodporován 8900
+
