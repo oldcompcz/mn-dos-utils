@@ -4,6 +4,7 @@
 
 * `cdplay` - Přehrávač audio CD disků
 * `cskey` - Ovladač české a slovenské klávesnice
+* `diskfile` - Souborové kopírování disket
 * `egacs` - České a slovenské fonty pro displeje EGA, VGA, LCD-VGA a Super VGA
 * `manualy` - Různé manuály k IBM-PC a DOSu
 * `wait` - Čekání povelového souboru na stisk klávesy
